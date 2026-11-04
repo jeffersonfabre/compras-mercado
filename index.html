@@ -216,6 +216,10 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .dev img{width:72px;height:72px;object-fit:contain;flex:none;border-radius:16px;background:#fff}
 .mail{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .mail code{font-family:inherit;font-weight:700;user-select:all;-webkit-user-select:all;overflow-wrap:anywhere}
+.pickbar{position:sticky;bottom:0;margin-top:auto;padding:14px 0 calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 35%)}
+.chip.pk.on::before{content:"✓ "}
+.pkg .prow{align-items:center}
+.ldate{font-weight:600;font-size:15px}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
 .credit svg{width:28px;height:28px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
@@ -230,7 +234,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -316,7 +320,7 @@ function blocked(name){if(/aveia|vegetal|sem lactose|sem glúten|de soja|de coco
 /* ---------- Render ---------- */
 function render(){
   const a=$("#app");
-  const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings,plan:renderPlan}[ui.screen];
+  const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings,plan:renderPlan,pick:renderPick}[ui.screen];
   a.innerHTML=f();a.firstElementChild?.classList.add("fade");bind();
 }
 
@@ -359,8 +363,9 @@ function renderHome(){
   return `<div class="screen"><div class="topbar"><h2>Minhas listas</h2><span class="tag">v${VERSION}</span></div>
     <div class="greet">${mascot(64)}<div class="bubble">${esc(tone().hi(S.name))}</div></div>
     ${showInstall()&&!installSnoozed()?installCard():""}
+    <button class="promo c-mint" data-act="pick"><span class="em">🛒</span><span class="t"><b>Nova lista de compras</b>Escolha na sua relação o que vai comprar. A lista já sai com a data de hoje.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
     <button class="promo c-sun" data-act="month"><span class="em">📅</span><span class="t"><b>Lista padrão do mês</b>Compra base de 30 dias, separada por setor do mercado e ajustada à sua casa.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
-    <div class="pills">${S.lists.map(l=>{const s=listStats(l);return `<button class="pill c-${l.color}" data-open="${l.id}"><span>${esc(l.name)}<small>${s.d}/${s.tot} itens${s.v?" · "+brl(s.v):""}</small></span><span class="em">${l.em}</span></button>`}).join("")}
+    <div class="pills">${S.lists.map(l=>{const s=listStats(l);return `<button class="pill c-${l.color}" data-open="${l.id}"><span>${esc(l.name)}<small>${l.date?fmtD(l.date)+" · ":""}${l.closed?"✓ concluída · ":""}${s.d}/${s.tot} itens${s.v?" · "+brl(s.v):""}</small></span><span class="em">${l.em}</span></button>`}).join("")}
     <button class="add-list" data-act="new-list">+ Nova lista</button></div>
     ${tabs("home")}</div>`;
 }
@@ -380,7 +385,7 @@ function renderList(){
     const sp=l.items.filter(i=>(i.cat||"Outros")===c).reduce((a,i)=>a+(i.price||0)*i.qty,0),bd=budgetOf(c),em=(plan.find(x=>x.name===c)||{}).em||"";
     return `<p class="sec">${em} ${esc(c)} · ${g.length}${bd?` <span class="${sp>bd?"over":""}">· ${brl(sp)} de ${brl(bd)}</span>`:""}</p><ul class="items">${g.map(row).join("")}</ul>`}).join(""):`<ul class="items">${pend.map(row).join("")}</ul>`;
   return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><button class="link" data-act="list-opts">Editar lista</button></div>
-    <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2><div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
+    <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2>${l.date?`<div class="ldate">📅 ${fmtLong(l.date)}${l.closed?" · ✓ concluída":""}</div>`:""}<div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
       <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}${s.v?`<span class="est">Estimativa com os últimos preços que você salvou.</span>`:""}</div>
     <div class="adder"><textarea id="add-txt" placeholder="Digite ou cole uma receita…" aria-label="Adicionar itens"></textarea>
       <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
@@ -389,7 +394,8 @@ function renderList(){
     ${sugg.length?`<div><p class="sec">Sugestões do Moranguito</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
     ${l.items.length?`${pendHtml}${done.length?`<p class="sec">No carrinho</p><ul class="items">${done.map(row).join("")}</ul>`:""}`
       :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Adiciona aí em cima ou toca numa sugestão.</p></div>`}
-    ${done.length?`<button class="cta alt" data-act="checkout">Finalizar compra · ${brl(done.reduce((a,i)=>a+(i.price||0)*i.qty,0))}</button>`:""}
+    ${l.date&&done.length&&!l.cupomSaved?`<button class="promo c-lilac" data-act="cupom"><span class="em">🧾</span><span class="t"><b>Já passou no caixa?</b>Tire a foto do cupom fiscal para salvar os preços desta compra.</span><span aria-hidden="true" style="font-size:22px">›</span></button>`:""}
+    ${done.length&&!l.closed?`<button class="cta alt" data-act="checkout">${l.date?"Concluir compra":"Finalizar compra"} · ${brl(done.reduce((a,i)=>a+(i.price||0)*i.qty,0))}</button>`:""}
     ${tabs("home")}</div>`;
 }
 
@@ -492,12 +498,12 @@ function finishOnb(){
   S.lists.push(l);save();applyTheme(S.theme);ui.listId=l.id;ui.screen="list";render();toast(tone().add);
 }
 function checkout(l){
-  const done=l.items.filter(i=>i.done),date=new Date().toISOString().slice(0,10);
+  const done=l.items.filter(i=>i.done),date=l.date||todayISO();
   const total=done.reduce((a,i)=>a+(i.price||0)*i.qty,0);
-  done.filter(i=>i.price).forEach(i=>S.history.push({name:i.name,price:i.price,size:i.size,sizeUnit:i.sizeUnit,date,list:l.name}));
-  if(total)S.purchases.push({date,total,list:l.name});
+  if(!l.cupomSaved){done.filter(i=>i.price).forEach(i=>S.history.push({name:i.name,price:i.price,size:i.size,sizeUnit:i.sizeUnit,date,list:l.name}));
+    if(total)S.purchases.push({date,total,list:l.name});}
   // mantém os itens na lista para a próxima compra, desmarcados e com o último preço
-  done.forEach(i=>i.done=false);
+  if(l.date){l.closed=true;ui.screen="home"}else done.forEach(i=>i.done=false);
   if(S.sample){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false}
   save();render();toast(tone().done+(total?" "+brl(total):""));
 }
@@ -528,6 +534,7 @@ function addText(){
 function bind(){
   const A=$("#app");
   if(ui.screen==="plan")bindPlan(A);
+  if(ui.screen==="pick")bindPick(A);
   A.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=b.dataset.act,o=ui.ob,l=S.lists.find(x=>x.id===ui.listId);
     if(a==="next"){ui.step++;render()}
@@ -541,6 +548,8 @@ function bind(){
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
     else if(a==="month")monthSheet();
+    else if(a==="pick"){ui.pick={date:todayISO(),name:"",sel:{},extra:[]};ui.screen="pick";render();scrollTo(0,0)}
+    else if(a==="pick-go")createPicked();
     else if(a==="plan-reset"){if(b.dataset.armed){S.plan=null;save();render();toast("Divisão padrão restaurada.")}else{b.dataset.armed=1;b.textContent="Confirmar?"}}
     else if(a==="plan-newcat"){const P=getPlan();P.push({em:"🛍️",name:"Nova categoria",pct:0,items:[]});S.plan=P;save();render();A.querySelector(`.pcat[data-ci="${P.length-1}"] .pname`)?.select()}
     else if(a==="copy-mail"){const done=()=>toast("E-mail copiado.");try{navigator.clipboard.writeText(DEV_EMAIL).then(done,()=>{selectMail();toast("E-mail selecionado. É só copiar.")})}catch(e){selectMail();toast("E-mail selecionado. É só copiar.")}}
@@ -614,6 +623,55 @@ function monthSheet(){
       const l={id:uid(),name:`Compra do mês · ${mes}`,color:"mint",em:"📅",month:true,items:monthItems(n)};
       S.lists.unshift(l);save();close();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast(`${l.items.length} itens para ${n} ${n>1?"pessoas":"pessoa"}.`)};
   });
+}
+
+/* ---------- Nova lista com data: escolher itens da relação ---------- */
+function todayISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+const fmtD=iso=>iso.slice(8,10)+"/"+iso.slice(5,7);
+const fmtLong=iso=>new Date(iso+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
+const defName=iso=>`Mercado · ${fmtD(iso)}`;
+function relation(){
+  const base=monthItems(1).map(i=>({cat:i.cat,name:i.name,unit:i.unit}));
+  const seen=new Set(base.map(i=>norm(i.name)));
+  S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);if(!seen.has(k)){seen.add(k);base.push({cat:"Já usados nas suas listas",name:i.name,unit:i.unit||"un"})}}));
+  (ui.pick?.extra||[]).forEach(n=>{if(!seen.has(norm(n))){seen.add(norm(n));base.push({cat:"Outros",name:n,unit:"un"})}});
+  return base;
+}
+function renderPick(){
+  const pk=ui.pick,R=relation(),plan=getPlan(),cats=[...new Set(R.map(i=>i.cat))],n=Object.keys(pk.sel).length;
+  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><h2 style="font-size:22px">Nova lista de compras</h2><span style="width:44px"></span></div>
+    <div class="grid2"><label class="field">Data da compra<input id="pk-date" type="date" value="${pk.date}"></label>
+      <label class="field">Nome (opcional)<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>
+    <input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar na relação" aria-label="Buscar item na relação">
+    <p class="hint" style="margin:0">Toque no que vai comprar. Quantidade e preço você ajusta depois, na lista.</p>
+    <div class="adder"><input id="pk-new" class="padd" placeholder="Não achou? Inclua outro item" aria-label="Incluir outro item"><button class="btn" id="pk-add">Incluir</button></div>
+    ${cats.map(c=>{const em=(plan.find(x=>x.name===c)||{}).em||(c.startsWith("Já")?"🕘":"🛍️"),its=R.filter(i=>i.cat===c);
+      return `<div class="group pkg"><div class="prow"><p class="glabel">${em} ${esc(c)}</p><button class="link" data-pkall style="padding:4px;font-size:13px">Marcar todos</button></div>
+      <div class="chips">${its.map(i=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`}).join("")}</div></div>`}).join("")}
+    <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n?"":"disabled"}>${n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"}</button></div></div>`;
+}
+function bindPick(A){
+  const pk=ui.pick;
+  const upd=()=>{const n=Object.keys(pk.sel).length,b=A.querySelector("[data-act=pick-go]");b.disabled=!n;b.textContent=n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"};
+  const set=(c,on)=>{if(on)pk.sel[c.dataset.k]=c.dataset.u||"un";else delete pk.sel[c.dataset.k];c.classList.toggle("on",on);c.setAttribute("aria-pressed",on)};
+  A.querySelectorAll(".chip.pk").forEach(c=>c.onclick=()=>{set(c,!pk.sel[c.dataset.k]);upd()});
+  A.querySelectorAll("[data-pkall]").forEach(b=>b.onclick=()=>{const cs=[...b.closest(".pkg").querySelectorAll(".chip.pk")].filter(c=>!c.hidden),all=cs.every(c=>pk.sel[c.dataset.k]);
+    cs.forEach(c=>set(c,!all));b.textContent=all?"Marcar todos":"Desmarcar todos";upd()});
+  $("#pk-date").onchange=e=>{pk.date=e.target.value||todayISO();$("#pk-name").placeholder=defName(pk.date)};
+  $("#pk-name").oninput=e=>{pk.name=e.target.value};
+  $("#pk-q").oninput=e=>{const q=norm(e.target.value);A.querySelectorAll(".pkg").forEach(g=>{let any=false;g.querySelectorAll(".chip.pk").forEach(c=>{const ok=!q||norm(c.textContent).includes(q);c.hidden=!ok;any=any||ok});g.hidden=!any})};
+  const add=()=>{const inp=$("#pk-new"),v=inp.value.trim();if(!v)return;
+    v.split(/[,;]/).map(t=>t.trim()).filter(Boolean).forEach(t=>{const nm=t.charAt(0).toUpperCase()+t.slice(1);if(!pk.extra.includes(nm))pk.extra.push(nm);
+      const hit=relation().find(i=>norm(i.name)===norm(nm));pk.sel[(hit?hit.cat:"Outros")+"|"+(hit?hit.name:nm)]=hit?.unit||"un"});
+    const y=scrollY;render();scrollTo(0,y);toast("Incluído e marcado.")};
+  $("#pk-new").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}};$("#pk-add").onclick=add;
+}
+function createPicked(){
+  const pk=ui.pick;
+  const items=Object.entries(pk.sel).map(([k,u])=>{const i=k.indexOf("|"),cat=k.slice(0,i),name=k.slice(i+1);return{id:uid(),name,cat,unit:u||"un",qty:1,price:lastPrice(name),size:null,done:false}});
+  if(!items.length)return;
+  const l={id:uid(),name:pk.name.trim()||defName(pk.date),date:pk.date,color:"sky",em:"🛒",items};
+  S.lists.unshift(l);ui.pick=null;save();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast(`Lista de ${fmtD(l.date)} criada com ${items.length} ${items.length>1?"itens":"item"}.`);
 }
 
 /* ---------- Tela: divisão do mês (editável) ---------- */
@@ -699,7 +757,7 @@ async function prepImage(file){
     x.putImageData(d,0,0);return c;
   }finally{URL.revokeObjectURL(url)}
 }
-function pickCupom(){const f=$("#cupom-file");f.value="";f.click()}
+function pickCupom(){ui.cupomList=ui.screen==="list"?ui.listId:null;const f=$("#cupom-file");f.value="";f.click()}
 function readCupom(file){
   sheet(`<h2>Lendo o cupom…</h2><p class="hint" id="c-msg" style="margin:0">Preparando a foto</p><div class="prog"><i id="c-bar"></i></div>
     <p style="color:var(--muted);font-size:14px">Dica: cupom esticado, foto reta, com boa luz e a lista de itens inteira no quadro.</p>`,async(el,close)=>{
@@ -716,13 +774,13 @@ function readCupom(file){
 }
 function rowsHtml(items){return items.length?`<div class="rvh"><span></span><span>Produto</span><span>R$ unit.</span></div>`+items.map((it,i)=>`<div class="rv" data-i="${i}"><input type="checkbox" checked aria-label="Salvar este item"><input type="text" value="${esc(it.name)}" aria-label="Produto"><input type="number" inputmode="decimal" step="0.01" min="0" value="${it.price.toFixed(2)}" aria-label="Preço unitário"></div>`).join(""):""}
 function reviewCupom(r,raw,failed){
-  const today=new Date().toISOString().slice(0,10);
+  const today=todayISO(),tl=S.lists.find(x=>x.id===ui.cupomList);
   const head=failed?`<div class="alert">Não consegui ler a foto aqui. Tente outra foto ou cole o texto do cupom abaixo.</div>`
     :r.items.length?`<p style="color:var(--muted)">Achei ${r.items.length} itens. Corrija o que a leitura errou e desmarque o que não quer salvar.</p>`
     :`<div class="alert">Não achei itens nessa foto. Tente uma mais reta e iluminada, ou cole o texto do cupom.</div>`;
   sheet(`<h2>Confira os preços</h2>${head}
     <div class="grid2"><label class="field">Mercado<input id="r-store" value="${esc(r.store)}" placeholder="ex.: Mercado do bairro"></label>
-    <label class="field">Data<input id="r-date" type="date" value="${r.date||today}"></label></div>
+    <label class="field">Data<input id="r-date" type="date" value="${r.date||tl?.date||today}"></label></div>
     <div id="r-rows">${rowsHtml(r.items)}</div>
     <details ${r.items.length?"":"open"}><summary class="link" style="padding:8px 0;cursor:pointer">Colar texto do cupom</summary>
       <textarea id="r-raw" placeholder="Ex.: CAFE PILAO 500G 1 UN X 24,90 24,90">${esc(raw)}</textarea>
@@ -739,12 +797,13 @@ function reviewCupom(r,raw,failed){
       if(!rows.length){toast("Nenhum item marcado com preço.");return}
       const store=el.querySelector("#r-store").value.trim(),date=el.querySelector("#r-date").value||today;
       if(S.sample){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false}
-      let upd=0;
+      let upd=0,mk=0;
       rows.forEach(x=>{const sz=sizeOf(x.name);S.history.push({name:x.name,price:x.price,size:sz?.size??null,sizeUnit:sz?.unit,date,store,src:"cupom"});
-        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++}}))});
+        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++;if(tl&&l===tl){if(x.qty)it.qty=x.qty;if(!it.done){it.done=true;mk++}}}}))});
+      if(tl)tl.cupomSaved=true;
       const sum=rows.reduce((a,x)=>a+x.price*x.qty,0);
       S.purchases.push({date,total:total>0?total:Math.round(sum*100)/100,store,list:"Cupom fiscal"});
-      save();close();render();toast(`${rows.length} preços salvos${upd?` · ${upd} ${upd>1?"itens atualizados":"item atualizado"} nas listas`:""}`);
+      save();close();render();toast(`${rows.length} preços salvos${mk?` · ${mk} ${mk>1?"itens marcados como comprados":"item marcado como comprado"}`:upd?` · ${upd} ${upd>1?"itens atualizados":"item atualizado"} nas listas`:""}`);
     };
   });
 }
