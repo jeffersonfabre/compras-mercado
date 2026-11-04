@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FF5A3C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Compras">
 <title>Compras Mercado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
@@ -166,6 +173,31 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .spark{width:100%;height:40px}
 .tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--surface);color:var(--muted);padding:3px 8px;border-radius:99px}
 
+/* Novos blocos */
+.promo{border-radius:28px;padding:16px 18px;display:flex;align-items:center;gap:14px;color:#1A1512;text-align:left;width:100%}
+.promo .t{flex:1;min-width:0;line-height:1.35;font-size:14px}
+.promo .t b{display:block;font-size:17px;margin-bottom:2px}
+.promo .em{font-size:30px;flex:none}
+.promo .side{display:flex;flex-direction:column;gap:2px;align-items:center;flex:none}
+.promo .link{color:#1A1512;opacity:.7;font-size:13px;padding:4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{min-height:46px;padding:0 18px;border-radius:99px;background:var(--surface);font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.btn.dark{background:var(--ink);color:var(--on-ink)}
+.promo .btn.dark{background:#1A1512;color:#FFFBF7}
+.stepper{display:flex;align-items:center;gap:16px;justify-content:center}
+.stepper button{width:52px;height:52px;border-radius:50%;background:var(--surface);font-size:24px;font-weight:700}
+.stepper output{font-family:var(--f-display);font-weight:800;font-size:44px;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;line-height:1.45}
+.prog{height:10px;background:var(--surface);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;width:4%;background:var(--tomato);transition:width .2s}
+.rvh,.rv{display:grid;grid-template-columns:26px minmax(0,1fr) 92px;gap:8px;align-items:center}
+.rvh{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rv{padding:6px 0;border-bottom:1px solid var(--line)}
+.rv input[type=text],.rv input[type=number]{height:42px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 10px;font-size:15px;color:var(--fg);min-width:0;width:100%}
+.rv input[type=checkbox]{width:22px;height:22px;accent-color:var(--tomato)}
+.sheet textarea{border-radius:16px;border:2px solid var(--line);background:var(--card);padding:12px;min-height:130px;width:100%;font:inherit;color:var(--fg);resize:vertical}
+.sheet p{margin:0;line-height:1.45}
+.est{font-size:13px;opacity:.75}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
 .credit svg{width:28px;height:28px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
@@ -177,9 +209,10 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 </head>
 <body>
 <div id="app"></div>
+<input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -215,6 +248,27 @@ const TONES = {
   zoeiro:{label:"Zoeiro",d:"Com uma pitada de piada",hi:n=>`E aí${n?", "+n:""}, vai gastar quanto hoje? 😏`,add:"Mais um pro carrinho, hein?",done:"Carteira chorou, mas a geladeira agradece."},
 };
 
+const CATS = ["Mercearia","Hortifrúti","Carnes e ovos","Laticínios e padaria","Limpeza","Higiene","Pet","Bebê e crianças","Outros"];
+// [setor, item, unidade, quantidade por pessoa/mês, mínimo]
+const MONTH = [
+  ["Mercearia","Arroz 5kg","pct",.4,1],["Mercearia","Feijão 1kg","pct",1,1],["Mercearia","Café 500g","pct",.5,1],
+  ["Mercearia","Açúcar 1kg","pct",.5,1],["Mercearia","Óleo de soja 900ml","un",.5,1],["Mercearia","Macarrão 500g","pct",1,1],
+  ["Mercearia","Molho de tomate","un",1.5,2],["Mercearia","Farinha de mandioca 500g","pct",.3,1],["Mercearia","Sal 1kg","pct",.1,1],
+  ["Mercearia","Biscoito","pct",1,1],["Mercearia","Aveia","pct",.3,1],
+  ["Hortifrúti","Banana","dz",1,1],["Hortifrúti","Tomate","kg",.75,1],["Hortifrúti","Cebola","kg",.5,1],["Hortifrúti","Alho","un",.5,1],
+  ["Hortifrúti","Batata","kg",.75,1],["Hortifrúti","Folhas (alface, couve)","un",2,2],["Hortifrúti","Frutas da estação","kg",1.5,1],
+  ["Carnes e ovos","Frango","kg",1.5,1],["Carnes e ovos","Carne moída","kg",.75,1],["Carnes e ovos","Bife","kg",.75,1],["Carnes e ovos","Ovos","dz",1,1],
+  ["Laticínios e padaria","Leite 1L","un",4,4],["Laticínios e padaria","Manteiga","un",.5,1],["Laticínios e padaria","Queijo muçarela 200g","pct",1,1],
+  ["Laticínios e padaria","Iogurte","un",2,2],["Laticínios e padaria","Pão de forma","un",1,1],
+  ["Limpeza","Detergente","un",1,2],["Limpeza","Sabão em pó","un",.5,1],["Limpeza","Amaciante","un",.5,1],["Limpeza","Água sanitária","un",.5,1],
+  ["Limpeza","Desinfetante","un",.5,1],["Limpeza","Esponja","un",1,2],["Limpeza","Saco de lixo","pct",.5,1],["Limpeza","Papel toalha","pct",.3,1],
+  ["Higiene","Papel higiênico 12 rolos","pct",.5,1],["Higiene","Sabonete","un",2,2],["Higiene","Pasta de dente","un",.5,1],
+  ["Higiene","Shampoo","un",.3,1],["Higiene","Condicionador","un",.3,1],["Higiene","Desodorante","un",.5,1],
+];
+const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})();
+let deferredPrompt = null;
+
 let S = load();
 let ui = {screen:S.onboarded?"home":"onb", step:0, listId:null, ob:{theme:S.theme||"dark",prefs:[...(S.prefs||[])],first:"Mercado do mês",custom:"",tone:"animado",name:""}};
 
@@ -237,10 +291,10 @@ function parseItems(txt){
     else if((m=s.match(/^(.+?)\s*x\s*(\d+)$/i))){name=m[1];qty=+m[2]}
     name=name.replace(/^(de|do|da)\s+/i,"").replace(/\s+/g," ");
     name=name.charAt(0).toUpperCase()+name.slice(1);
-    return {id:uid(),name,qty:qty||1,price:null,size:null,unit:"un",done:false};
+    return {id:uid(),name,qty:qty||1,price:lastPrice(name),size:null,unit:"un",done:false};
   }).filter(i=>i.name.length>1);
 }
-function blocked(name){return S.prefs.some(p=>(BLOCK[p]||[]).some(b=>name.toLowerCase().startsWith(b.toLowerCase())))}
+function blocked(name){if(/aveia|vegetal|sem lactose|sem glúten|de soja|de coco|de amêndoa/i.test(name))return false;return S.prefs.some(p=>(BLOCK[p]||[]).some(b=>name.toLowerCase().startsWith(b.toLowerCase())))}
 
 /* ---------- Render ---------- */
 function render(){
@@ -258,7 +312,7 @@ function renderOnb(){
     <span class="float" style="left:4%;bottom:14%">🥑</span><span class="float" style="right:6%;bottom:20%">🧀</span>${mascot(190)}</div>
     <h1>Oi! Eu sou o Tomé.</h1>
     <p class="sub">Eu organizo suas listas e aprendo com cada compra. Antes, 4 perguntas rápidas pra eu te conhecer.</p>
-    <div class="row"><button class="ghost" data-act="have">Já usei antes</button><button class="cta" style="flex:1" data-act="next">Vamos lá</button></div></div>`;
+    <div class="row"><button class="ghost" data-act="have">Já usei antes</button><button class="cta" style="flex:1" data-act="next">Vamos lá</button></div>${showInstall()?`<button class="link" data-act="install" style="align-self:center">📲 Instalar no celular</button>`:""}</div>`;
   if(st===1) return `<div class="screen">${top}<div class="hero">${mascot(140)}</div>
     <h1>Você prefere o app claro ou escuro?</h1><p class="sub">Dá para trocar depois.</p>
     <div class="themes">${["light","dark"].map(t=>`<button class="tcard ${t} ${o.theme===t?"sel":""}" data-theme-pick="${t}" aria-pressed="${o.theme===t}">
@@ -287,6 +341,8 @@ function listStats(l){const tot=l.items.length,d=l.items.filter(i=>i.done).lengt
 function renderHome(){
   return `<div class="screen"><div class="topbar"><h2>Minhas listas</h2><span class="tag">v${VERSION}</span></div>
     <div class="greet">${mascot(64)}<div class="bubble">${esc(tone().hi(S.name))}</div></div>
+    ${showInstall()&&!installSnoozed()?installCard():""}
+    <button class="promo c-sun" data-act="month"><span class="em">📅</span><span class="t"><b>Lista padrão do mês</b>Compra base de 30 dias, separada por setor do mercado e ajustada à sua casa.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
     <div class="pills">${S.lists.map(l=>{const s=listStats(l);return `<button class="pill c-${l.color}" data-open="${l.id}"><span>${esc(l.name)}<small>${s.d}/${s.tot} itens${s.v?" · "+brl(s.v):""}</small></span><span class="em">${l.em}</span></button>`}).join("")}
     <button class="add-list" data-act="new-list">+ Nova lista</button></div>
     ${tabs("home")}</div>`;
@@ -300,14 +356,17 @@ function renderList(){
   const row=i=>`<li class="item ${i.done?"done":""}"><button class="check" data-toggle="${i.id}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?"✓":""}</button>
     <button class="ibody" data-edit="${i.id}"><div class="iname">${esc(i.name)}</div><div class="isub">${i.qty} ${i.unit}${i.size?` · ${i.size}${i.sizeUnit||""}`:""}${blocked(i.name)?" · ⚠️ confere suas preferências":""}</div></button>
     <button class="iprice ${i.price?"":"empty"}" data-edit="${i.id}">${i.price?brl(i.price*i.qty):"+ preço"}</button></li>`;
+  const hasCat=l.items.some(i=>i.cat);
+  const pendHtml=hasCat?CATS.map(c=>{const g=pend.filter(i=>(i.cat||"Outros")===c);return g.length?`<p class="sec">${c} · ${g.length}</p><ul class="items">${g.map(row).join("")}</ul>`:""}).join(""):`<ul class="items">${pend.map(row).join("")}</ul>`;
   return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><button class="link" data-act="list-opts">Editar lista</button></div>
     <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2><div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
-      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div></div>
+      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${s.v?`<span class="est">Estimativa com os últimos preços que você salvou.</span>`:""}</div>
     <div class="adder"><textarea id="add-txt" placeholder="Digite ou cole uma receita…" aria-label="Adicionar itens"></textarea>
       <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
     <p class="hint">Dica: "2 leite, pão, café x3" vira 3 itens de uma vez.</p>
+    <div class="actions"><button class="btn" data-act="cupom">📷 Ler cupom fiscal</button>${hasCat?"":`<button class="btn" data-act="month">📅 Lista padrão do mês</button>`}</div>
     ${sugg.length?`<div><p class="sec">Sugestões do Tomé</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
-    ${l.items.length?`<ul class="items">${pend.map(row).join("")}</ul>${done.length?`<p class="sec">No carrinho</p><ul class="items">${done.map(row).join("")}</ul>`:""}`
+    ${l.items.length?`${pendHtml}${done.length?`<p class="sec">No carrinho</p><ul class="items">${done.map(row).join("")}</ul>`:""}`
       :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Adiciona aí em cima ou toca numa sugestão.</p></div>`}
     ${done.length?`<button class="cta alt" data-act="checkout">Finalizar compra · ${brl(done.reduce((a,i)=>a+(i.price||0)*i.qty,0))}</button>`:""}
     ${tabs("home")}</div>`;
@@ -319,7 +378,7 @@ function renderInsights(){
   const H=S.history,P=S.purchases;
   if(!H.length) return `<div class="screen"><div class="topbar"><h2>Quanto sua cesta subiu</h2></div>
     <div class="empty">${mascot(110,"think")}<p>Quando você finalizar uma compra com preços, eu mostro aqui a variação de cada produto, o gasto do mês e quando a embalagem encolheu.</p>
-    <button class="cta" data-act="sample">Ver com dados de exemplo</button></div>${tabs("insights")}</div>`;
+    <button class="cta alt" data-act="cupom">📷 Ler cupom fiscal</button><button class="cta" data-act="sample">Ver com dados de exemplo</button></div>${tabs("insights")}</div>`;
   const now=new Date(),months=[];for(let k=5;k>=0;k--){const d=new Date(now.getFullYear(),now.getMonth()-k,1);months.push(d.toISOString().slice(0,7))}
   const byM=Object.fromEntries(months.map(m=>[m,0]));P.forEach(p=>{const m=monthKey(p.date);if(m in byM)byM[m]+=p.total});
   const max=Math.max(1,...Object.values(byM)),cur=byM[months[5]],prev=byM[months[4]];
@@ -334,6 +393,7 @@ function renderInsights(){
     return `<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--tomato)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`};
   const d=p=>{const c=Math.abs(p)<0.5?"eq":p>0?"up":"down";return `<span class="delta ${c}">${c==="eq"?"=":(p>0?"▲ ":"▼ ")+Math.abs(p).toFixed(1).replace(".",",")+"%"}</span>`};
   return `<div class="screen"><div class="topbar"><h2>Quanto sua cesta subiu</h2>${S.sample?`<span class="tag">exemplo</span>`:""}</div>
+    <button class="btn dark" data-act="cupom" style="align-self:flex-start">📷 Ler cupom fiscal</button>
     <div class="kpi"><span style="font-weight:600">Gasto em ${mn(months[5])}</span><span class="big">${brl(cur)}</span>
       <span>${prev?`${cur>=prev?"▲":"▼"} ${brl(Math.abs(cur-prev))} vs ${mn(months[4])}`:"Primeiro mês registrado"}</span></div>
     <div class="card"><p class="glabel">Para onde foi o dinheiro · 6 meses</p>
@@ -350,6 +410,7 @@ function renderSettings(){
     <div class="card"><p class="glabel">Tema</p><div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div></div>
     <div class="card"><p class="glabel">Tom do Tomé</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div></div>
     <div class="card"><p class="glabel">Preferências</p>${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}</div>
+    <div class="card"><p class="glabel">App no celular</p>${isStandalone()?`<p style="margin:0">✓ Você já está usando o app instalado.</p>`:`<p style="margin:0;color:var(--muted);line-height:1.45">Instale para abrir direto da tela inicial, como um app, e usar sem internet.</p><button class="btn dark" data-act="install" style="align-self:flex-start">📲 Instalar no celular</button>`}</div>
     <div class="card"><p class="glabel">Seus dados são seus</p><p style="margin:0;color:var(--muted);line-height:1.45">Tudo fica salvo só neste aparelho. Nada vai pra servidor nenhum.</p>
       <button class="danger" data-act="reset" style="align-self:flex-start;padding-left:0">Apagar todos os meus dados</button></div>
     <div class="credit"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10" fill="none" stroke="#F28C28" stroke-width="4" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="7" fill="#1E5FBF"/><text x="16" y="19.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="monospace">&lt;/&gt;</text></svg>
@@ -403,7 +464,8 @@ function finishOnb(){
   const o=ui.ob;S.theme=o.theme;S.prefs=o.prefs;S.tone=o.tone;S.name=o.name.trim();S.onboarded=true;
   const name=o.custom.trim()||o.first,t=TEMPLATES[name];
   const l={id:uid(),name,color:t?.color||"sky",em:t?.em||"🧺",items:[]};
-  (t?.items||[]).filter(n=>!blocked(n)).slice(0,4).forEach(n=>l.items.push({id:uid(),name:n,qty:1,price:null,size:null,unit:"un",done:false}));
+  if(name==="Mercado do mês"){l.items=monthItems(defaultPeople())}
+  else (t?.items||[]).filter(n=>!blocked(n)).slice(0,4).forEach(n=>l.items.push({id:uid(),name:n,qty:1,price:lastPrice(n),size:null,unit:"un",done:false}));
   S.lists.push(l);save();applyTheme(S.theme);ui.listId=l.id;ui.screen="list";render();toast(tone().add);
 }
 function checkout(l){
@@ -454,6 +516,10 @@ function bind(){
     else if(a==="mic")mic(b);
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
+    else if(a==="month")monthSheet();
+    else if(a==="cupom")pickCupom();
+    else if(a==="install")doInstall();
+    else if(a==="install-later"){S.installSnooze=Date.now();save();render()}
     else if(a==="clear-sample"){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false;save();render()}
     else if(a==="reset"){if(b.dataset.armed){S=blank();save();ui={...ui,screen:"onb",step:0};applyTheme(ui.ob.theme);render()}else{b.dataset.armed=1;b.textContent="Toque de novo pra confirmar"}}
   });
@@ -474,6 +540,170 @@ function bind(){
   A.querySelectorAll("[data-set-tone]").forEach(b=>b.onclick=()=>{S.tone=b.dataset.setTone;save();render()});
   A.querySelectorAll("[data-set-pref]").forEach(b=>b.onclick=()=>{const p=b.dataset.setPref;S.prefs.includes(p)?S.prefs.splice(S.prefs.indexOf(p),1):S.prefs.push(p);save();render()});
 }
+
+/* ---------- Lista padrão do mês ---------- */
+function defaultPeople(){return S.people||(S.prefs.includes("Moro sozinho")?1:2+(S.prefs.includes("Tem criança")?1:0))}
+function monthItems(people){
+  const P=S.prefs,vegan=P.includes("Sou vegano");
+  let rows=MONTH.map(r=>[...r]);
+  const swap=(a,b)=>rows.forEach(r=>{if(r[1]===a)r[1]=b});
+  const drop=re=>{rows=rows.filter(r=>!re.test(r[1]))};
+  if(P.includes("Sem lactose")){swap("Leite 1L","Leite sem lactose 1L");swap("Iogurte","Iogurte sem lactose");swap("Queijo muçarela 200g","Queijo sem lactose")}
+  if(P.includes("Sem glúten")){swap("Macarrão 500g","Macarrão sem glúten");swap("Pão de forma","Pão sem glúten");swap("Biscoito","Biscoito sem glúten");swap("Aveia","Tapioca")}
+  if(vegan){swap("Leite 1L","Leite vegetal 1L");swap("Leite sem lactose 1L","Leite vegetal 1L");drop(/^(Frango|Carne|Bife|Ovos|Manteiga|Queijo|Iogurte)/);
+    rows.push(["Mercearia","Grão-de-bico","pct",.5,1],["Mercearia","Lentilha","pct",.5,1],["Laticínios e padaria","Tofu","un",1,1])}
+  else if(P.includes("Vegetariano")){drop(/^(Frango|Carne|Bife)/);rows.push(["Mercearia","Grão-de-bico","pct",.5,1],["Mercearia","Lentilha","pct",.5,1])}
+  if(P.includes("Mais proteína")&&!vegan)rows.push(["Carnes e ovos","Peito de frango","kg",1,1]);
+  if(P.includes("Low carb"))drop(/^(Biscoito|Açúcar|Macarrão)/);
+  if(P.includes("Tenho diabetes")){drop(/^Açúcar/);rows.push(["Mercearia","Adoçante","un",0,1])}
+  if(P.includes("Menos sal"))rows.push(["Mercearia","Temperos naturais","un",0,2]);
+  if(P.includes("Tenho pet"))rows.push(["Pet","Ração","pct",0,1],["Pet","Petisco","pct",0,1]);
+  if(P.includes("Tem bebê"))rows.push(["Bebê e crianças","Fraldas","pct",0,4],["Bebê e crianças","Lenço umedecido","pct",0,2],["Bebê e crianças","Pomada para assadura","un",0,1]);
+  if(P.includes("Tem criança"))rows.push(["Bebê e crianças","Lanche escolar","pct",0,4],["Bebê e crianças","Suco de caixinha","un",0,8]);
+  return rows.filter(r=>!blocked(r[1])).map(([cat,name,unit,pp,min])=>({id:uid(),name,cat,unit,
+    qty:unit==="kg"?Math.max(min,Math.round(pp*people*2)/2):Math.max(min,Math.ceil(pp*people-1e-9)),
+    price:lastPrice(name),size:null,done:false}));
+}
+function monthSheet(){
+  let n=defaultPeople();
+  sheet(`<h2>Lista padrão do mês</h2>
+    <p style="color:var(--muted)">Monto uma compra base para 30 dias, separada por setor do mercado e ajustada às suas preferências. Depois é só tirar ou mudar o que quiser.</p>
+    <p class="glabel" style="text-align:center">Quantas pessoas na casa?</p>
+    <div class="stepper"><button id="m-minus" aria-label="Menos uma pessoa">−</button><output id="m-n">${n}</output><button id="m-plus" aria-label="Mais uma pessoa">+</button></div>
+    <button class="cta alt" id="m-go">Montar minha lista</button>`,(el,close)=>{
+    const o=el.querySelector("#m-n");
+    el.querySelector("#m-minus").onclick=()=>{n=Math.max(1,n-1);o.textContent=n};
+    el.querySelector("#m-plus").onclick=()=>{n=Math.min(12,n+1);o.textContent=n};
+    el.querySelector("#m-go").onclick=()=>{
+      S.people=n;const mes=new Date().toLocaleDateString("pt-BR",{month:"long"});
+      const l={id:uid(),name:`Compra do mês · ${mes}`,color:"mint",em:"📅",items:monthItems(n)};
+      S.lists.unshift(l);save();close();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast(`${l.items.length} itens para ${n} ${n>1?"pessoas":"pessoa"}.`)};
+  });
+}
+
+/* ---------- Preços: casar nomes ---------- */
+const norm=s=>String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+function matches(item,product){const w=norm(item).split(" ").filter(x=>x.length>=3&&!/^\d/.test(x));if(!w.length)return false;return (" "+norm(product)+" ").includes(" "+w[0])}
+function lastPrice(name){for(let i=S.history.length-1;i>=0;i--){const h=S.history[i];if(!h.sample&&(norm(h.name)===norm(name)||matches(name,h.name)))return h.price}return null}
+function sizeOf(name){const m=String(name).match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ml|lt|l)\b/i);if(!m)return null;let u=m[2].toLowerCase();if(u==="lt")u="L";if(u==="l")u="L";return{size:parseFloat(m[1].replace(",",".")),unit:u}}
+
+/* ---------- Cupom fiscal ---------- */
+function num(s){return parseFloat(String(s).replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",","."))}
+const SKIP=/TOTAL|PAGAR|SUBTOTAL|DESCONTO|ACRESC|TROCO|DINHEIRO|CART[AÃ]O|CR[EÉ]DITO|D[EÉ]BITO|\bPIX\b|CNPJ|CPF|TRIBUT|ICMS|IMPOSTO|DESCRI[CÇ]|C[OÓ]DIGO|CHAVE|PROTOCOLO|CONSULT|S[EÉ]RIE|EMISS|VALOR PAGO|FORMA|ITENS|LEI 12|ENDERE|TELEFONE|\bIE\b/i;
+function cleanName(s){
+  s=s.replace(/^\s*\d{1,3}\s+/,"").replace(/^\d{6,14}\s+/,"").replace(/\s+[A-Z]?\d{2}\s*$/,"").replace(/[|_~*"'#]+/g," ").replace(/\s+/g," ").trim();
+  return s.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/(\d)(kg|g|ml|lt|l)\b/gi,(m,a,b)=>a+({l:"L",lt:"L"}[b.toLowerCase()]||b.toLowerCase()));
+}
+function parseCupom(text){
+  const lines=String(text).split(/\r?\n/).map(l=>l.replace(/\s+/g," ").trim()).filter(l=>l.length>1);
+  const out={items:[],store:"",date:"",total:0};
+  const dm=text.match(/(\d{2})[\/.-](\d{2})[\/.-](20\d{2})/);if(dm)out.date=`${dm[3]}-${dm[2]}-${dm[1]}`;
+  out.store=(lines.slice(0,5).find(l=>/[A-Za-zÀ-ú]{4}/.test(l)&&!/CNPJ|DOCUMENTO|NFC|CUPOM|DANFE|AUXILIAR|CONSUMIDOR|ELETR|EXTRATO/i.test(l))||"").slice(0,40);
+  const tm=text.match(/(?:VALOR\s*(?:A\s*)?PAGAR|VALOR\s*TOTAL|TOTAL)[^\d\n]{0,20}(\d{1,3}(?:\.\d{3})*,\d{2})/i);if(tm)out.total=num(tm[1]);
+  const reQ=/(\d+(?:[.,]\d{1,3})?)\s*(?:UN|UND|KG|PC|PCT|CX|LT|L|G|DZ|FD|BD|SC)?\s*[xX×*]\s*(\d+[.,]\d{2,3})/i;
+  const reEnd=/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})\s*[A-Z]?\s*$/;
+  const L=s=>(String(s).match(/[A-Za-zÀ-ú]/g)||[]).length;
+  let pend=null;
+  for(const l of lines){
+    if(SKIP.test(l)){pend=null;continue}
+    const q=l.match(reQ),e=l.match(reEnd);
+    if(q){
+      let src=l.slice(0,q.index).trim();if(L(src)<3&&pend)src=pend;pend=null;
+      const qty=num(q[1]),unit=num(q[2]);
+      if(L(src)>=3&&unit>0&&unit<10000)out.items.push({name:cleanName(src),qty:qty>0&&qty<1000?qty:1,price:unit});
+    }else if(e&&L(l.slice(0,e.index))>=3){
+      const price=num(e[1]);pend=null;
+      if(price>0&&price<10000)out.items.push({name:cleanName(l.slice(0,e.index)),qty:1,price});
+    }else if(L(l)>=3)pend=l;
+  }
+  return out;
+}
+function loadScript(src){return new Promise((res,rej)=>{if(window.Tesseract)return res();const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("script"));document.head.appendChild(s)})}
+async function prepImage(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+    const k=Math.min(2,2000/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+    const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(img,0,0,c.width,c.height);
+    const d=x.getImageData(0,0,c.width,c.height),p=d.data;
+    for(let i=0;i<p.length;i+=4){let v=.299*p[i]+.587*p[i+1]+.114*p[i+2];v=(v-140)*1.6+140;v=v<0?0:v>255?255:v;p[i]=p[i+1]=p[i+2]=v}
+    x.putImageData(d,0,0);return c;
+  }finally{URL.revokeObjectURL(url)}
+}
+function pickCupom(){const f=$("#cupom-file");f.value="";f.click()}
+function readCupom(file){
+  sheet(`<h2>Lendo o cupom…</h2><p class="hint" id="c-msg" style="margin:0">Preparando a foto</p><div class="prog"><i id="c-bar"></i></div>
+    <p style="color:var(--muted);font-size:14px">Dica: cupom esticado, foto reta, com boa luz e a lista de itens inteira no quadro.</p>`,async(el,close)=>{
+    const msg=el.querySelector("#c-msg"),bar=el.querySelector("#c-bar");
+    try{
+      const canvas=await prepImage(file);
+      msg.textContent="Carregando o leitor (demora só na primeira vez)";bar.style.width="15%";
+      await loadScript(TESS);
+      const worker=await Tesseract.createWorker("por",1,{logger:m=>{if(m.status==="recognizing text"){msg.textContent="Lendo os itens";bar.style.width=Math.round(20+m.progress*80)+"%"}}});
+      const {data}=await worker.recognize(canvas);await worker.terminate();
+      close();reviewCupom(parseCupom(data.text),data.text,false);
+    }catch(e){close();reviewCupom({items:[],store:"",date:"",total:0},"",true)}
+  });
+}
+function rowsHtml(items){return items.length?`<div class="rvh"><span></span><span>Produto</span><span>R$ unit.</span></div>`+items.map((it,i)=>`<div class="rv" data-i="${i}"><input type="checkbox" checked aria-label="Salvar este item"><input type="text" value="${esc(it.name)}" aria-label="Produto"><input type="number" inputmode="decimal" step="0.01" min="0" value="${it.price.toFixed(2)}" aria-label="Preço unitário"></div>`).join(""):""}
+function reviewCupom(r,raw,failed){
+  const today=new Date().toISOString().slice(0,10);
+  const head=failed?`<div class="alert">Não consegui ler a foto aqui. Tente outra foto ou cole o texto do cupom abaixo.</div>`
+    :r.items.length?`<p style="color:var(--muted)">Achei ${r.items.length} itens. Corrija o que a leitura errou e desmarque o que não quer salvar.</p>`
+    :`<div class="alert">Não achei itens nessa foto. Tente uma mais reta e iluminada, ou cole o texto do cupom.</div>`;
+  sheet(`<h2>Confira os preços</h2>${head}
+    <div class="grid2"><label class="field">Mercado<input id="r-store" value="${esc(r.store)}" placeholder="ex.: Mercado do bairro"></label>
+    <label class="field">Data<input id="r-date" type="date" value="${r.date||today}"></label></div>
+    <div id="r-rows">${rowsHtml(r.items)}</div>
+    <details ${r.items.length?"":"open"}><summary class="link" style="padding:8px 0;cursor:pointer">Colar texto do cupom</summary>
+      <textarea id="r-raw" placeholder="Ex.: CAFE PILAO 500G 1 UN X 24,90 24,90">${esc(raw)}</textarea>
+      <button class="btn" id="r-parse" style="margin-top:8px">Ler texto</button></details>
+    <button class="cta alt" id="r-save">Salvar preços</button>
+    <button class="btn" id="r-again" style="align-self:center">📷 Tirar outra foto</button>`,(el,close)=>{
+    let items=r.items,total=r.total;
+    el.querySelector("#r-parse").onclick=()=>{const p=parseCupom(el.querySelector("#r-raw").value);items=p.items;total=p.total;
+      const st=el.querySelector("#r-store");if(!st.value&&p.store)st.value=p.store;if(p.date)el.querySelector("#r-date").value=p.date;
+      el.querySelector("#r-rows").innerHTML=rowsHtml(items);toast(items.length?`${items.length} itens encontrados.`:"Não achei itens nesse texto.")};
+    el.querySelector("#r-again").onclick=()=>{close();pickCupom()};
+    el.querySelector("#r-save").onclick=()=>{
+      const rows=[...el.querySelectorAll(".rv")].map(d=>{const [cb,nm,pr]=d.querySelectorAll("input");return{ok:cb.checked,name:nm.value.trim(),price:parseFloat(pr.value),qty:items[+d.dataset.i]?.qty||1}}).filter(x=>x.ok&&x.name&&x.price>0);
+      if(!rows.length){toast("Nenhum item marcado com preço.");return}
+      const store=el.querySelector("#r-store").value.trim(),date=el.querySelector("#r-date").value||today;
+      if(S.sample){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false}
+      let upd=0;
+      rows.forEach(x=>{const sz=sizeOf(x.name);S.history.push({name:x.name,price:x.price,size:sz?.size??null,sizeUnit:sz?.unit,date,store,src:"cupom"});
+        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++}}))});
+      const sum=rows.reduce((a,x)=>a+x.price*x.qty,0);
+      S.purchases.push({date,total:total>0?total:Math.round(sum*100)/100,store,list:"Cupom fiscal"});
+      save();close();render();toast(`${rows.length} preços salvos${upd?` · ${upd} ${upd>1?"itens atualizados":"item atualizado"} nas listas`:""}`);
+    };
+  });
+}
+
+/* ---------- Instalar no celular (PWA) ---------- */
+const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const isMobile=()=>isIOS()||/android/i.test(navigator.userAgent);
+const showInstall=()=>!EMBED&&!isStandalone()&&(!!deferredPrompt||isMobile());
+const installSnoozed=()=>S.installSnooze&&Date.now()-S.installSnooze<7*864e5;
+function installCard(){return `<div class="promo c-sky"><span class="em">📲</span><span class="t"><b>Instale no celular</b>Abre direto da tela inicial, como app, e funciona sem internet.</span>
+  <span class="side"><button class="btn dark" data-act="install">Instalar</button><button class="link" data-act="install-later">Agora não</button></span></div>`}
+async function doInstall(){
+  if(deferredPrompt){const p=deferredPrompt;deferredPrompt=null;p.prompt();const r=await p.userChoice.catch(()=>null);if(r&&r.outcome==="accepted")toast("Instalando…");render();return}
+  const ios=isIOS(),inApp=/Instagram|FBAN|FBAV|WhatsApp|Line\/|TikTok/i.test(navigator.userAgent);
+  sheet(`<h2>Instalar no ${ios?"iPhone":"Android"}</h2>
+    ${inApp?`<div class="alert"><b>Abra no ${ios?"Safari":"Chrome"} primeiro.</b> Você está no navegador de outro app. Toque em ··· ou ⋮ e escolha "Abrir no ${ios?"Safari":"navegador"}".</div>`:""}
+    <ol class="steps">${ios
+      ?`<li>Toque em <b>Compartilhar</b>, o quadrado com a seta ↑ na barra do Safari.</li><li>Role a lista e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>. O ícone aparece junto dos seus apps.</li>`
+      :`<li>Toque no menu <b>⋮</b> do Chrome, no canto de cima.</li><li>Escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme em <b>Instalar</b>. O ícone aparece junto dos seus apps.</li>`}</ol>
+    <button class="cta" id="i-ok">Entendi</button>`,(el,close)=>{el.querySelector("#i-ok").onclick=close});
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;render()});
+window.addEventListener("appinstalled",()=>{deferredPrompt=null;toast("App instalado na tela inicial.");render()});
+if("serviceWorker" in navigator&&!EMBED&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+$("#cupom-file").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(f)readCupom(f)});
+
 render();
 </script>
 </body>

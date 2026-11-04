@@ -1,13 +1,14 @@
 # Compras Mercado
 
-App web de lista de compras com o mascote Tomé.
+App web (PWA) de lista de compras com o mascote Tomé.
 
-- Onboarding: tema claro/escuro, preferências alimentares e da casa, primeira lista, tom do mascote
+- **Lista padrão do mês:** compra base de 30 dias por setor do mercado, calculada pelo número de pessoas e ajustada às preferências (vegano, sem lactose, pet, bebê…)
+- **Foto do cupom fiscal:** lê o cupom (OCR no próprio aparelho, Tesseract.js), mostra os itens para conferir e salva os preços no histórico e nas listas
+- **Instalável no celular:** botão "Instalar" no Android; passo a passo no iPhone (Safari → Compartilhar → Adicionar à Tela de Início); funciona offline
 - Listas coloridas: digitar, colar receita ou falar a lista (voz em pt-BR)
-- Preço por item, tamanho da embalagem e histórico de compras
 - "Quanto sua cesta subiu": gasto do mês, variação por produto e alerta de embalagem que encolheu
-- Dados salvos só no navegador (localStorage)
+- Dados salvos só no aparelho (localStorage)
 
-Arquivo único: `index.html`. Sem build.
+Arquivos: `index.html`, `manifest.webmanifest`, `sw.js`, `icons/`. Sem build.
 
-Feito por **DomDevLabs** · v1.2.0
+Feito por **DomDevLabs** · v1.3.0
