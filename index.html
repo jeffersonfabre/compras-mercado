@@ -218,6 +218,12 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .mail code{font-family:inherit;font-weight:700;user-select:all;-webkit-user-select:all;overflow-wrap:anywhere}
 .pickbar{position:sticky;bottom:0;margin-top:auto;padding:14px 0 calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 35%)}
 .chip.pk.on::before{content:"✓ "}
+.pkh{display:flex;gap:2px;flex:none}
+.pkh .link{padding:4px 6px;font-size:13px}
+.pkh .link.on{color:var(--fg);text-decoration:underline}
+.chip.pkplus{border:2px dashed var(--line);background:none;color:var(--muted)}
+.pkg.editing{background:var(--surface);border-radius:20px;padding:12px;margin-inline:-12px}
+.pkg.editing .chip.ed{background:var(--card)}
 .pkg .prow{align-items:center}
 .ldate{font-weight:600;font-size:15px}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
@@ -234,7 +240,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.5.1";
+const VERSION = "1.6.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -601,6 +607,7 @@ function monthItems(people){
   if(P.includes("Menos sal"))rows.push([HORT,"Temperos naturais","un",0,2]);
   if(P.includes("Tem criança"))rows.push([PAD,"Lanche escolar","pct",0,4],[PAD,"Suco de caixinha","un",0,8]);
   if(P.includes("Alergia a frutos do mar"))drop(/atum|camar/i);
+  const hide=new Set(plan.flatMap(c=>c.hide||[]).map(norm));rows=rows.filter(r=>!hide.has(norm(r[1])));
   return rows.filter(r=>!blocked(r[1])).map(([cat,name,unit,pp,min])=>({id:uid(),name,cat,unit,
     qty:unit==="kg"?Math.max(min,Math.round(pp*people*2)/2):Math.max(min,Math.ceil(pp*people-1e-9)),
     price:lastPrice(name),size:null,done:false})).filter(i=>i.qty>0);
@@ -646,8 +653,12 @@ function renderPick(){
     <p class="hint" style="margin:0">Toque no que vai comprar. Quantidade e preço você ajusta depois, na lista.</p>
     <div class="adder"><input id="pk-new" class="padd" placeholder="Não achou? Inclua outro item" aria-label="Incluir outro item"><button class="btn" id="pk-add">Incluir</button></div>
     ${cats.map(c=>{const em=(plan.find(x=>x.name===c)||{}).em||(c.startsWith("Já")?"🕘":"🛍️"),its=R.filter(i=>i.cat===c);
-      return `<div class="group pkg"><div class="prow"><p class="glabel">${em} ${esc(c)}</p><button class="link" data-pkall style="padding:4px;font-size:13px">Marcar todos</button></div>
-      <div class="chips">${its.map(i=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`}).join("")}</div></div>`}).join("")}
+      const inPlan=plan.some(x=>x.name===c),ed=inPlan&&pk.edit===c;
+      return `<div class="group pkg${ed?" editing":""}"><div class="prow"><p class="glabel">${em} ${esc(c)}</p><span class="pkh">${inPlan?`<button class="link${ed?" on":""}" data-pkedit="${esc(c)}">${ed?"Pronto":"Editar"}</button>`:""}${ed?"":`<button class="link" data-pkall>Marcar todos</button>`}</span></div>
+      ${ed?`<div class="chips">${its.map(i=>`<span class="chip ed">${esc(i.name)}<button data-pkrm="${esc(i.name)}" aria-label="Excluir ${esc(i.name)} de ${esc(c)}">✕</button></span>`).join("")||`<span class="isub">Nenhum item.</span>`}</div>
+      <div class="adder"><input class="padd" id="pk-in" placeholder="Novo item (ex.: Morango)" aria-label="Novo item em ${esc(c)}"><button class="btn dark" data-pkin>Incluir</button></div>
+      <p class="isub" style="margin:0">Toque no ✕ para excluir. O que você mudar aqui fica salvo na sua relação.</p>`
+      :`<div class="chips">${its.map(i=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`}).join("")}${inPlan?`<button class="chip pkplus" data-pkedit="${esc(c)}" data-pkopen="1">+ Novo item</button>`:""}</div>`}</div>`}).join("")}
     <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n?"":"disabled"}>${n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"}</button></div></div>`;
 }
 function bindPick(A){
@@ -665,6 +676,19 @@ function bindPick(A){
       const hit=relation().find(i=>norm(i.name)===norm(nm));pk.sel[(hit?hit.cat:"Outros")+"|"+(hit?hit.name:nm)]=hit?.unit||"un"});
     const y=scrollY;render();scrollTo(0,y);toast("Incluído e marcado.")};
   $("#pk-new").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}};$("#pk-add").onclick=add;
+  // incluir/excluir itens de uma categoria da relação
+  const keep=fn=>{const y=scrollY;fn();render();scrollTo(0,y)};
+  const editPlan=f=>{const P=getPlan(),cat=P.find(x=>x.name===pk.edit);if(!cat)return;f(cat);S.plan=P;save()};
+  A.querySelectorAll("[data-pkedit]").forEach(b=>b.onclick=()=>{const c=b.dataset.pkedit;keep(()=>{pk.edit=b.dataset.pkopen?c:(pk.edit===c?null:c)});if(pk.edit)$("#pk-in")?.focus({preventScroll:true})});
+  A.querySelectorAll("[data-pkrm]").forEach(b=>b.onclick=()=>{const n=b.dataset.pkrm,c=pk.edit;keep(()=>editPlan(cat=>{const i=cat.items.findIndex(x=>norm(x.name)===norm(n));
+    if(i>=0)cat.items.splice(i,1);else(cat.hide=cat.hide||[]).push(n);delete pk.sel[c+"|"+n]}));toast(`${n} excluído de ${c}.`)});
+  const addIn=()=>{const inp=$("#pk-in");if(!inp)return;const v=inp.value.trim();if(!v){inp.focus();return}const c=pk.edit;let k=0;
+    keep(()=>editPlan(cat=>v.split(/[,;]/).map(t=>t.trim()).filter(Boolean).forEach(t=>{const nm=t.charAt(0).toUpperCase()+t.slice(1);
+      if(!cat.items.some(x=>norm(x.name)===norm(nm)))cat.items.push({name:nm,unit:"un",pp:.5,min:1});
+      if(cat.hide)cat.hide=cat.hide.filter(h=>norm(h)!==norm(nm));pk.sel[c+"|"+nm]="un";k++})));
+    $("#pk-in")?.focus({preventScroll:true});toast(k>1?`${k} itens incluídos em ${c} e marcados.`:`Incluído em ${c} e marcado.`)};
+  const pin=$("#pk-in");if(pin)pin.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addIn()}};
+  A.querySelectorAll("[data-pkin]").forEach(b=>b.onclick=addIn);
 }
 function createPicked(){
   const pk=ui.pick;
