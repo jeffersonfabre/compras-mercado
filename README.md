@@ -1,4 +1,4 @@
-# Feirinha
+# Xepa
 
 App web de lista de compras com o mascote Tomé.
 
@@ -10,4 +10,4 @@ App web de lista de compras com o mascote Tomé.
 
 Arquivo único: `index.html`. Sem build.
 
-Feito por **DomDevLabs** · v1.0.0
+Feito por **DomDevLabs** · v1.1.0

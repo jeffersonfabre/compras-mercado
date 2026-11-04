@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FF5A3C">
-<title>Feirinha</title>
+<title>Xepa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
@@ -179,8 +179,8 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <div id="app"></div>
 
 <script>
-const VERSION = "1.0.0";
-const KEY = "feirinha.v1";
+const VERSION = "1.1.0";
+const KEY = "xepa.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
 const brl = n => (n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -353,7 +353,7 @@ function renderSettings(){
     <div class="card"><p class="glabel">Seus dados são seus</p><p style="margin:0;color:var(--muted);line-height:1.45">Tudo fica salvo só neste aparelho. Nada vai pra servidor nenhum.</p>
       <button class="danger" data-act="reset" style="align-self:flex-start;padding-left:0">Apagar todos os meus dados</button></div>
     <div class="credit"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10" fill="none" stroke="#F28C28" stroke-width="4" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="7" fill="#1E5FBF"/><text x="16" y="19.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="monospace">&lt;/&gt;</text></svg>
-      <span>Feirinha v${VERSION} · feito por <b>DomDevLabs</b></span></div>
+      <span>Xepa v${VERSION} · feito por <b>DomDevLabs</b></span></div>
     ${tabs("settings")}</div>`;
 }
 
