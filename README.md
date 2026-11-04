@@ -1,8 +1,9 @@
 # Compras Mercado
 
-App web (PWA) de lista de compras com o mascote Tomé.
+App web (PWA) de lista de compras com o mascote Moranguito.
 
-- **Lista padrão do mês:** compra base de 30 dias por setor do mercado, calculada pelo número de pessoas e ajustada às preferências (vegano, sem lactose, pet, bebê…)
+- **Lista padrão do mês:** compra de 30 dias montada pela *Divisão do mês* (11 categorias: proteínas, hortifrúti, mercearia, laticínios e frios, padaria e matinais, bebidas, congelados, limpeza, higiene pessoal, utilidades do lar, pets/bebê), calculada pelo número de pessoas e ajustada às preferências
+- **Divisão do mês editável:** em Ajustes, mude categorias, itens sugeridos e a % do orçamento de cada uma; com orçamento definido, a lista mostra gasto x previsto por categoria
 - **Foto do cupom fiscal:** lê o cupom (OCR no próprio aparelho, Tesseract.js), mostra os itens para conferir e salva os preços no histórico e nas listas
 - **Instalável no celular:** botão "Instalar" no Android; passo a passo no iPhone (Safari → Compartilhar → Adicionar à Tela de Início); funciona offline
 - Listas coloridas: digitar, colar receita ou falar a lista (voz em pt-BR)
@@ -11,4 +12,6 @@ App web (PWA) de lista de compras com o mascote Tomé.
 
 Arquivos: `index.html`, `manifest.webmanifest`, `sw.js`, `icons/`. Sem build.
 
-Feito por **DomDevLabs** · v1.3.0
+Feito por **DomDevLabs** · domdevlabs@gmail.com · v1.4.0
+
+Logo: coloque o arquivo oficial em `icons/domdevlabs-logo.png` (até lá o app mostra uma versão provisória).

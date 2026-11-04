@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FF5A3C">
+<meta name="theme-color" content="#FF3D68">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -19,7 +19,7 @@
 :root{
   --bg:#FFFBF7; --surface:#F3EEE8; --card:#FFFFFF; --fg:#1A1512; --muted:#6F655E; --line:#E6DED6;
   --ink:#1A1512; --on-ink:#FFFBF7;
-  --tomato:#FF5A3C; --mint:#9BF0C8; --sky:#A9C8FF; --peach:#FFC79A; --sun:#FFE45C; --lilac:#D8B8FF;
+  --tomato:#FF3D68; --mint:#9BF0C8; --sky:#A9C8FF; --peach:#FFC79A; --sun:#FFE45C; --lilac:#D8B8FF;
   --pill-fg:#1A1512; --good:#178A4E; --bad:#D6342B;
   --f-display:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;
   --f-body:"Figtree",system-ui,-apple-system,sans-serif;
@@ -60,18 +60,21 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .row{display:flex;gap:12px;align-items:center}
 .ghost{font-weight:700;padding:0 18px;height:60px}
 
-/* Mascote: tomatinho original */
+/* Mascote: morango original */
 .mascot{--s:150px;width:var(--s);height:var(--s);position:relative;animation:bob 3s ease-in-out infinite}
-.mascot .body{position:absolute;inset:12% 6% 0;border-radius:50% 50% 46% 46%;
-  background:radial-gradient(circle at 35% 30%,#FFB49F 0 8%,#FF6B47 30%,#E83A22 75%);
-  box-shadow:0 0 calc(var(--s)*.35) rgba(255,90,60,.45)}
-.mascot .leaf{position:absolute;left:50%;top:2%;width:34%;height:22%;transform:translateX(-50%)}
-.mascot .leaf::before,.mascot .leaf::after{content:"";position:absolute;bottom:0;width:55%;height:60%;background:#2FA35A;border-radius:0 100% 0 100%}
+.mascot .body{position:absolute;inset:16% 8% 0;border-radius:46% 46% 50% 50% / 36% 36% 64% 64%;
+  background:radial-gradient(circle at 30% 24%,rgba(255,255,255,.5) 0 6%,transparent 16%),
+    radial-gradient(circle,#FFE59A 0 calc(var(--s)*.012),transparent calc(var(--s)*.017)) 0 0/calc(var(--s)*.15) calc(var(--s)*.14),
+    radial-gradient(circle,#FFE59A 0 calc(var(--s)*.012),transparent calc(var(--s)*.017)) calc(var(--s)*.075) calc(var(--s)*.07)/calc(var(--s)*.15) calc(var(--s)*.14),
+    linear-gradient(170deg,#FF5A78,#E8193C 60%,#C0102E);
+  box-shadow:0 0 calc(var(--s)*.35) rgba(255,61,104,.45)}
+.mascot .leaf{position:absolute;left:50%;top:5%;width:54%;height:24%;transform:translateX(-50%);z-index:1;background:#2FA35A;
+  clip-path:polygon(50% 0,58% 38%,98% 28%,68% 58%,88% 100%,50% 74%,12% 100%,32% 58%,2% 28%,42% 38%)}
 .mascot .leaf::before{left:0;transform:rotate(-15deg)}
 .mascot .leaf::after{right:0;transform:scaleX(-1) rotate(-15deg)}
-.mascot .eye{position:absolute;top:42%;width:7%;height:17%;background:#1A1512;border-radius:99px;animation:blink 4.5s infinite}
+.mascot .eye{position:absolute;top:44%;z-index:1;width:7%;height:17%;background:#1A1512;border-radius:99px;animation:blink 4.5s infinite}
 .mascot .eye.l{left:36%}.mascot .eye.r{right:36%}
-.mascot .cheek{position:absolute;top:60%;width:12%;height:7%;border-radius:50%;background:#FF9C86;opacity:.8}
+.mascot .cheek{position:absolute;top:62%;width:12%;height:7%;border-radius:50%;background:#FFB3C2;opacity:.85;z-index:1}
 .mascot .cheek.l{left:22%}.mascot .cheek.r{right:22%}
 .mascot.think .eye{height:12%;top:46%}
 @keyframes bob{50%{transform:translateY(-6px)}}
@@ -198,6 +201,21 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .sheet textarea{border-radius:16px;border:2px solid var(--line);background:var(--card);padding:12px;min-height:130px;width:100%;font:inherit;color:var(--fg);resize:vertical}
 .sheet p{margin:0;line-height:1.45}
 .est{font-size:13px;opacity:.75}
+.pctbar{display:flex;height:12px;border-radius:99px;overflow:hidden;gap:2px;background:var(--surface)}
+.pctbar i{display:block;min-width:0}
+.pname{flex:1;min-width:0;height:44px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 12px;font-weight:700;font-size:17px;color:var(--fg)}
+.ppct{display:flex;align-items:center;gap:4px;font-weight:700;flex:none}
+.ppct input{width:64px;height:44px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 8px;font-size:16px;color:var(--fg);text-align:right}
+.cem{font-size:24px;flex:none}
+.chip.ed{display:inline-flex;align-items:center;gap:6px;padding:7px 7px 7px 14px}
+.chip.ed button{width:24px;height:24px;border-radius:50%;background:var(--line);font-size:12px;display:grid;place-items:center}
+.chip.ed small{color:var(--muted);font-weight:500}
+.padd{flex:1;min-width:0;height:46px;border-radius:99px;border:2px solid var(--line);background:var(--card);padding:0 16px;color:var(--fg)}
+.over{color:var(--bad)}
+.dev{display:flex;align-items:center;gap:14px}
+.dev img{width:72px;height:72px;object-fit:contain;flex:none;border-radius:16px;background:#fff}
+.mail{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mail code{font-family:inherit;font-weight:700;user-select:all;-webkit-user-select:all;overflow-wrap:anywhere}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
 .credit svg{width:28px;height:28px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
@@ -212,7 +230,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -248,23 +266,22 @@ const TONES = {
   zoeiro:{label:"Zoeiro",d:"Com uma pitada de piada",hi:n=>`E aí${n?", "+n:""}, vai gastar quanto hoje? 😏`,add:"Mais um pro carrinho, hein?",done:"Carteira chorou, mas a geladeira agradece."},
 };
 
-const CATS = ["Mercearia","Hortifrúti","Carnes e ovos","Laticínios e padaria","Limpeza","Higiene","Pet","Bebê e crianças","Outros"];
-// [setor, item, unidade, quantidade por pessoa/mês, mínimo]
-const MONTH = [
-  ["Mercearia","Arroz 5kg","pct",.4,1],["Mercearia","Feijão 1kg","pct",1,1],["Mercearia","Café 500g","pct",.5,1],
-  ["Mercearia","Açúcar 1kg","pct",.5,1],["Mercearia","Óleo de soja 900ml","un",.5,1],["Mercearia","Macarrão 500g","pct",1,1],
-  ["Mercearia","Molho de tomate","un",1.5,2],["Mercearia","Farinha de mandioca 500g","pct",.3,1],["Mercearia","Sal 1kg","pct",.1,1],
-  ["Mercearia","Biscoito","pct",1,1],["Mercearia","Aveia","pct",.3,1],
-  ["Hortifrúti","Banana","dz",1,1],["Hortifrúti","Tomate","kg",.75,1],["Hortifrúti","Cebola","kg",.5,1],["Hortifrúti","Alho","un",.5,1],
-  ["Hortifrúti","Batata","kg",.75,1],["Hortifrúti","Folhas (alface, couve)","un",2,2],["Hortifrúti","Frutas da estação","kg",1.5,1],
-  ["Carnes e ovos","Frango","kg",1.5,1],["Carnes e ovos","Carne moída","kg",.75,1],["Carnes e ovos","Bife","kg",.75,1],["Carnes e ovos","Ovos","dz",1,1],
-  ["Laticínios e padaria","Leite 1L","un",4,4],["Laticínios e padaria","Manteiga","un",.5,1],["Laticínios e padaria","Queijo muçarela 200g","pct",1,1],
-  ["Laticínios e padaria","Iogurte","un",2,2],["Laticínios e padaria","Pão de forma","un",1,1],
-  ["Limpeza","Detergente","un",1,2],["Limpeza","Sabão em pó","un",.5,1],["Limpeza","Amaciante","un",.5,1],["Limpeza","Água sanitária","un",.5,1],
-  ["Limpeza","Desinfetante","un",.5,1],["Limpeza","Esponja","un",1,2],["Limpeza","Saco de lixo","pct",.5,1],["Limpeza","Papel toalha","pct",.3,1],
-  ["Higiene","Papel higiênico 12 rolos","pct",.5,1],["Higiene","Sabonete","un",2,2],["Higiene","Pasta de dente","un",.5,1],
-  ["Higiene","Shampoo","un",.3,1],["Higiene","Condicionador","un",.3,1],["Higiene","Desodorante","un",.5,1],
-];
+// Divisão do mês: categorias, % de referência do orçamento e sugestões [item, unidade, por pessoa/mês, mínimo, condição]
+const DEFAULT_PLAN = [
+  {em:"🥩",name:"Proteínas",pct:25,items:[["Carne bovina","kg",.75,1],["Frango","kg",1.5,1],["Carne de porco","kg",.5,.5],["Peixe","kg",.5,.5],["Ovos","dz",1,1],["Linguiça","kg",.3,.5],["Embutidos (salsicha, mortadela)","pct",.5,1]]},
+  {em:"🥬",name:"Hortifrúti",pct:12,items:[["Frutas da estação","kg",2,1],["Banana","dz",1,1],["Legumes (cenoura, abobrinha, chuchu)","kg",1,1],["Batata","kg",.75,1],["Tomate","kg",.75,1],["Verduras (alface, couve)","un",2,2],["Alho","un",.5,1],["Cebola","kg",.5,1],["Cheiro-verde","un",2,2]]},
+  {em:"🥫",name:"Mercearia",pct:18,items:[["Arroz 5kg","pct",.4,1],["Feijão 1kg","pct",1,1],["Macarrão 500g","pct",1,1],["Farinha de mandioca 500g","pct",.3,1],["Açúcar 1kg","pct",.5,1],["Sal 1kg","pct",.1,1],["Óleo de soja 900ml","un",.5,1],["Azeite 500ml","un",.2,1],["Café 500g","pct",.5,1],["Molho de tomate","un",1.5,2],["Enlatados (milho, ervilha, atum)","un",1.5,2],["Grãos (lentilha, grão-de-bico)","pct",.3,1],["Temperos secos","un",.3,1]]},
+  {em:"🧀",name:"Laticínios e frios",pct:10,items:[["Leite 1L","un",4,4],["Queijo muçarela 200g","pct",1,1],["Iogurte","un",2,2],["Manteiga","un",.5,1],["Requeijão","un",.5,1],["Presunto 200g","pct",.5,1],["Peito de peru 200g","pct",.5,1]]},
+  {em:"🍞",name:"Padaria e matinais",pct:6,items:[["Pão de forma","un",1,1],["Biscoito","pct",1,1],["Torrada","pct",.3,1],["Cereal","un",.3,1],["Aveia","pct",.3,1],["Geleia","un",.2,1]]},
+  {em:"🧃",name:"Bebidas",pct:6,items:[["Água mineral (fardo)","un",1,1],["Suco","un",2,2],["Refrigerante","un",1,1],["Cerveja (lata)","un",3,0],["Chá","cx",.3,1]]},
+  {em:"🧊",name:"Congelados",pct:4,items:[["Pão de queijo","pct",.5,1],["Polpa de fruta","pct",1,1],["Pratos prontos","un",1,1],["Sorvete","un",.3,1]]},
+  {em:"🧽",name:"Limpeza",pct:7,items:[["Detergente","un",1,2],["Sabão em pó ou líquido","un",.5,1],["Amaciante","un",.5,1],["Água sanitária","un",.5,1],["Desinfetante","un",.5,1],["Multiuso","un",.3,1],["Esponja","un",1,2],["Saco de lixo","pct",.5,1],["Pano de limpeza","un",.5,1]]},
+  {em:"🧴",name:"Higiene pessoal",pct:7,items:[["Papel higiênico 12 rolos","pct",.5,1],["Sabonete","un",2,2],["Shampoo","un",.3,1],["Pasta de dente","un",.5,1],["Desodorante","un",.5,1],["Absorvente","pct",.5,1],["Fio dental","un",.3,1]]},
+  {em:"🧻",name:"Utilidades do lar",pct:3,items:[["Papel toalha","pct",.3,1],["Papel-alumínio","un",.2,1],["Filme PVC","un",.2,1],["Guardanapo","pct",.3,1],["Pilhas","pct",.1,0],["Lâmpadas","un",.1,0]]},
+  {em:"🐾",name:"Pets / bebê",pct:2,items:[["Ração","pct",0,1,"pet"],["Areia sanitária","pct",0,1,"pet"],["Fralda","pct",0,4,"bebe"],["Lenço umedecido","pct",0,2,"bebe"]]},
+].map(c=>({...c,items:c.items.map(([name,unit,pp,min,need])=>({name,unit,pp,min,...(need?{need}:{})}))}));
+const DEV_EMAIL = "domdevlabs@gmail.com";
+const DDL_FALLBACK = "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='26' fill='none' stroke='#F28C28' stroke-width='9' stroke-dasharray='7.5 6.1'/><circle cx='32' cy='32' r='22' fill='#F28C28'/><circle cx='32' cy='32' r='17' fill='#1E5FBF'/><text x='32' y='37' text-anchor='middle' font-family='monospace' font-weight='700' font-size='13' fill='#fff'>&lt;/&gt;</text></svg>`);
 const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
 const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})();
 let deferredPrompt = null;
@@ -299,7 +316,7 @@ function blocked(name){if(/aveia|vegetal|sem lactose|sem glúten|de soja|de coco
 /* ---------- Render ---------- */
 function render(){
   const a=$("#app");
-  const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings}[ui.screen];
+  const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings,plan:renderPlan}[ui.screen];
   a.innerHTML=f();a.firstElementChild?.classList.add("fade");bind();
 }
 
@@ -309,8 +326,8 @@ function renderOnb(){
     `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="Voltar">‹</button>${dots(N,st)}<button class="link" data-act="skip-all">Pular</button></div>`;
   if(st===0) return `<div class="screen">${top}
     <div class="hero"><span class="float" style="left:8%;top:10%">🥦</span><span class="float" style="right:10%;top:6%">🍌</span>
-    <span class="float" style="left:4%;bottom:14%">🥑</span><span class="float" style="right:6%;bottom:20%">🧀</span>${mascot(190)}</div>
-    <h1>Oi! Eu sou o Tomé.</h1>
+    <span class="float" style="left:4%;bottom:14%">🥑</span><span class="float" style="right:6%;bottom:20%">🍓</span>${mascot(190)}</div>
+    <h1>Oi! Eu sou o Moranguito.</h1>
     <p class="sub">Eu organizo suas listas e aprendo com cada compra. Antes, 4 perguntas rápidas pra eu te conhecer.</p>
     <div class="row"><button class="ghost" data-act="have">Já usei antes</button><button class="cta" style="flex:1" data-act="next">Vamos lá</button></div>${showInstall()?`<button class="link" data-act="install" style="align-self:center">📲 Instalar no celular</button>`:""}</div>`;
   if(st===1) return `<div class="screen">${top}<div class="hero">${mascot(140)}</div>
@@ -357,15 +374,19 @@ function renderList(){
     <button class="ibody" data-edit="${i.id}"><div class="iname">${esc(i.name)}</div><div class="isub">${i.qty} ${i.unit}${i.size?` · ${i.size}${i.sizeUnit||""}`:""}${blocked(i.name)?" · ⚠️ confere suas preferências":""}</div></button>
     <button class="iprice ${i.price?"":"empty"}" data-edit="${i.id}">${i.price?brl(i.price*i.qty):"+ preço"}</button></li>`;
   const hasCat=l.items.some(i=>i.cat);
-  const pendHtml=hasCat?CATS.map(c=>{const g=pend.filter(i=>(i.cat||"Outros")===c);return g.length?`<p class="sec">${c} · ${g.length}</p><ul class="items">${g.map(row).join("")}</ul>`:""}).join(""):`<ul class="items">${pend.map(row).join("")}</ul>`;
+  const plan=getPlan(),order=[...new Set([...plan.map(c=>c.name),...l.items.map(i=>i.cat||"Outros")])];
+  const budgetOf=c=>{const p=plan.find(x=>x.name===c);return l.month&&S.budget&&p?S.budget*(+p.pct||0)/100:0};
+  const pendHtml=hasCat?order.map(c=>{const g=pend.filter(i=>(i.cat||"Outros")===c);if(!g.length)return "";
+    const sp=l.items.filter(i=>(i.cat||"Outros")===c).reduce((a,i)=>a+(i.price||0)*i.qty,0),bd=budgetOf(c),em=(plan.find(x=>x.name===c)||{}).em||"";
+    return `<p class="sec">${em} ${esc(c)} · ${g.length}${bd?` <span class="${sp>bd?"over":""}">· ${brl(sp)} de ${brl(bd)}</span>`:""}</p><ul class="items">${g.map(row).join("")}</ul>`}).join(""):`<ul class="items">${pend.map(row).join("")}</ul>`;
   return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><button class="link" data-act="list-opts">Editar lista</button></div>
     <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2><div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
-      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${s.v?`<span class="est">Estimativa com os últimos preços que você salvou.</span>`:""}</div>
+      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}${s.v?`<span class="est">Estimativa com os últimos preços que você salvou.</span>`:""}</div>
     <div class="adder"><textarea id="add-txt" placeholder="Digite ou cole uma receita…" aria-label="Adicionar itens"></textarea>
       <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
     <p class="hint">Dica: "2 leite, pão, café x3" vira 3 itens de uma vez.</p>
     <div class="actions"><button class="btn" data-act="cupom">📷 Ler cupom fiscal</button>${hasCat?"":`<button class="btn" data-act="month">📅 Lista padrão do mês</button>`}</div>
-    ${sugg.length?`<div><p class="sec">Sugestões do Tomé</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
+    ${sugg.length?`<div><p class="sec">Sugestões do Moranguito</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
     ${l.items.length?`${pendHtml}${done.length?`<p class="sec">No carrinho</p><ul class="items">${done.map(row).join("")}</ul>`:""}`
       :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Adiciona aí em cima ou toca numa sugestão.</p></div>`}
     ${done.length?`<button class="cta alt" data-act="checkout">Finalizar compra · ${brl(done.reduce((a,i)=>a+(i.price||0)*i.qty,0))}</button>`:""}
@@ -408,13 +429,15 @@ function renderInsights(){
 function renderSettings(){
   return `<div class="screen"><div class="topbar"><h2>Ajustes</h2></div>
     <div class="card"><p class="glabel">Tema</p><div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div></div>
-    <div class="card"><p class="glabel">Tom do Tomé</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div></div>
+    <div class="card"><p class="glabel">Tom do Moranguito</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div></div>
     <div class="card"><p class="glabel">Preferências</p>${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}</div>
+    <div class="card"><p class="glabel">Divisão das compras do mês</p><p style="margin:0;color:var(--muted);line-height:1.45">${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. Mude as sugestões e a parte do orçamento de cada uma.</p><button class="btn dark" data-go="plan" style="align-self:flex-start">Editar divisão</button></div>
     <div class="card"><p class="glabel">App no celular</p>${isStandalone()?`<p style="margin:0">✓ Você já está usando o app instalado.</p>`:`<p style="margin:0;color:var(--muted);line-height:1.45">Instale para abrir direto da tela inicial, como um app, e usar sem internet.</p><button class="btn dark" data-act="install" style="align-self:flex-start">📲 Instalar no celular</button>`}</div>
     <div class="card"><p class="glabel">Seus dados são seus</p><p style="margin:0;color:var(--muted);line-height:1.45">Tudo fica salvo só neste aparelho. Nada vai pra servidor nenhum.</p>
       <button class="danger" data-act="reset" style="align-self:flex-start;padding-left:0">Apagar todos os meus dados</button></div>
-    <div class="credit"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10" fill="none" stroke="#F28C28" stroke-width="4" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="7" fill="#1E5FBF"/><text x="16" y="19.5" text-anchor="middle" font-size="8" font-weight="700" fill="#fff" font-family="monospace">&lt;/&gt;</text></svg>
-      <span>Compras Mercado v${VERSION} · feito por <b>DomDevLabs</b></span></div>
+    <div class="card"><p class="glabel">Desenvolvido por</p>
+      <div class="dev"><img src="icons/domdevlabs-logo.png" alt="Logo DomDevLabs" onerror="this.onerror=null;this.src=DDL_FALLBACK"><div><b style="font-size:19px">DomDevLabs</b><div class="isub">Compras Mercado v${VERSION}</div></div></div>
+      <div class="mail"><span>Contato:</span><code id="dev-mail">${DEV_EMAIL}</code><button class="btn" data-act="copy-mail">Copiar</button></div></div>
     ${tabs("settings")}</div>`;
 }
 
@@ -464,7 +487,7 @@ function finishOnb(){
   const o=ui.ob;S.theme=o.theme;S.prefs=o.prefs;S.tone=o.tone;S.name=o.name.trim();S.onboarded=true;
   const name=o.custom.trim()||o.first,t=TEMPLATES[name];
   const l={id:uid(),name,color:t?.color||"sky",em:t?.em||"🧺",items:[]};
-  if(name==="Mercado do mês"){l.items=monthItems(defaultPeople())}
+  if(name==="Mercado do mês"){l.items=monthItems(defaultPeople());l.month=true}
   else (t?.items||[]).filter(n=>!blocked(n)).slice(0,4).forEach(n=>l.items.push({id:uid(),name:n,qty:1,price:lastPrice(n),size:null,unit:"un",done:false}));
   S.lists.push(l);save();applyTheme(S.theme);ui.listId=l.id;ui.screen="list";render();toast(tone().add);
 }
@@ -504,6 +527,7 @@ function addText(){
 
 function bind(){
   const A=$("#app");
+  if(ui.screen==="plan")bindPlan(A);
   A.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=b.dataset.act,o=ui.ob,l=S.lists.find(x=>x.id===ui.listId);
     if(a==="next"){ui.step++;render()}
@@ -517,6 +541,9 @@ function bind(){
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
     else if(a==="month")monthSheet();
+    else if(a==="plan-reset"){if(b.dataset.armed){S.plan=null;save();render();toast("Divisão padrão restaurada.")}else{b.dataset.armed=1;b.textContent="Confirmar?"}}
+    else if(a==="plan-newcat"){const P=getPlan();P.push({em:"🛍️",name:"Nova categoria",pct:0,items:[]});S.plan=P;save();render();A.querySelector(`.pcat[data-ci="${P.length-1}"] .pname`)?.select()}
+    else if(a==="copy-mail"){const done=()=>toast("E-mail copiado.");try{navigator.clipboard.writeText(DEV_EMAIL).then(done,()=>{selectMail();toast("E-mail selecionado. É só copiar.")})}catch(e){selectMail();toast("E-mail selecionado. É só copiar.")}}
     else if(a==="cupom")pickCupom();
     else if(a==="install")doInstall();
     else if(a==="install-later"){S.installSnooze=Date.now();save();render()}
@@ -543,41 +570,82 @@ function bind(){
 
 /* ---------- Lista padrão do mês ---------- */
 function defaultPeople(){return S.people||(S.prefs.includes("Moro sozinho")?1:2+(S.prefs.includes("Tem criança")?1:0))}
+function getPlan(){return S.plan||JSON.parse(JSON.stringify(DEFAULT_PLAN))}
 function monthItems(people){
-  const P=S.prefs,vegan=P.includes("Sou vegano");
-  let rows=MONTH.map(r=>[...r]);
+  const P=S.prefs,vegan=P.includes("Sou vegano"),pet=P.includes("Tenho pet"),bebe=P.includes("Tem bebê");
+  const plan=getPlan();if(!plan.length)return [];
+  const catBy=(re,fb)=>(plan.find(c=>re.test(c.name))||plan[fb]||plan[0]).name;
+  const PROT=catBy(/prote/i,0),HORT=catBy(/horti/i,1),MERC=catBy(/merce/i,2),PAD=catBy(/padar|matin/i,4);
+  let rows=[];
+  plan.forEach(c=>c.items.forEach(it=>{if(it.need==="pet"&&!pet)return;if(it.need==="bebe"&&!bebe)return;rows.push([c.name,it.name,it.unit||"un",it.pp??.5,it.min??1])}));
   const swap=(a,b)=>rows.forEach(r=>{if(r[1]===a)r[1]=b});
   const drop=re=>{rows=rows.filter(r=>!re.test(r[1]))};
-  if(P.includes("Sem lactose")){swap("Leite 1L","Leite sem lactose 1L");swap("Iogurte","Iogurte sem lactose");swap("Queijo muçarela 200g","Queijo sem lactose")}
-  if(P.includes("Sem glúten")){swap("Macarrão 500g","Macarrão sem glúten");swap("Pão de forma","Pão sem glúten");swap("Biscoito","Biscoito sem glúten");swap("Aveia","Tapioca")}
-  if(vegan){swap("Leite 1L","Leite vegetal 1L");swap("Leite sem lactose 1L","Leite vegetal 1L");drop(/^(Frango|Carne|Bife|Ovos|Manteiga|Queijo|Iogurte)/);
-    rows.push(["Mercearia","Grão-de-bico","pct",.5,1],["Mercearia","Lentilha","pct",.5,1],["Laticínios e padaria","Tofu","un",1,1])}
-  else if(P.includes("Vegetariano")){drop(/^(Frango|Carne|Bife)/);rows.push(["Mercearia","Grão-de-bico","pct",.5,1],["Mercearia","Lentilha","pct",.5,1])}
-  if(P.includes("Mais proteína")&&!vegan)rows.push(["Carnes e ovos","Peito de frango","kg",1,1]);
-  if(P.includes("Low carb"))drop(/^(Biscoito|Açúcar|Macarrão)/);
-  if(P.includes("Tenho diabetes")){drop(/^Açúcar/);rows.push(["Mercearia","Adoçante","un",0,1])}
-  if(P.includes("Menos sal"))rows.push(["Mercearia","Temperos naturais","un",0,2]);
-  if(P.includes("Tenho pet"))rows.push(["Pet","Ração","pct",0,1],["Pet","Petisco","pct",0,1]);
-  if(P.includes("Tem bebê"))rows.push(["Bebê e crianças","Fraldas","pct",0,4],["Bebê e crianças","Lenço umedecido","pct",0,2],["Bebê e crianças","Pomada para assadura","un",0,1]);
-  if(P.includes("Tem criança"))rows.push(["Bebê e crianças","Lanche escolar","pct",0,4],["Bebê e crianças","Suco de caixinha","un",0,8]);
+  if(P.includes("Sem lactose")){swap("Leite 1L","Leite sem lactose 1L");swap("Iogurte","Iogurte sem lactose");swap("Queijo muçarela 200g","Queijo sem lactose");swap("Requeijão","Requeijão sem lactose")}
+  if(P.includes("Sem glúten")){swap("Macarrão 500g","Macarrão sem glúten");swap("Pão de forma","Pão sem glúten");swap("Biscoito","Biscoito sem glúten");swap("Torrada","Torrada sem glúten");swap("Aveia","Tapioca")}
+  if(vegan){swap("Leite 1L","Leite vegetal 1L");swap("Leite sem lactose 1L","Leite vegetal 1L");
+    drop(/^(Carne|Frango|Peixe|Ovos|Linguiça|Embutidos|Manteiga|Queijo|Iogurte|Requeijão|Presunto|Peito de peru|Pão de queijo)/);
+    rows.push([PROT,"Tofu","un",1,1],[PROT,"Grão-de-bico","pct",.5,1],[PROT,"Proteína de soja","pct",.5,1])}
+  else if(P.includes("Vegetariano")){drop(/^(Carne|Frango|Peixe|Linguiça|Embutidos|Presunto|Peito de peru)/);rows.push([PROT,"Grão-de-bico","pct",.5,1],[PROT,"Lentilha","pct",.5,1])}
+  if(P.includes("Mais proteína")&&!vegan)rows.push([PROT,"Peito de frango","kg",1,1]);
+  if(P.includes("Low carb"))drop(/^(Biscoito|Açúcar|Macarrão|Refrigerante|Cereal)/);
+  if(P.includes("Tenho diabetes")){drop(/^(Açúcar|Refrigerante)/);rows.push([MERC,"Adoçante","un",0,1])}
+  if(P.includes("Menos sal"))rows.push([HORT,"Temperos naturais","un",0,2]);
+  if(P.includes("Tem criança"))rows.push([PAD,"Lanche escolar","pct",0,4],[PAD,"Suco de caixinha","un",0,8]);
+  if(P.includes("Alergia a frutos do mar"))drop(/atum|camar/i);
   return rows.filter(r=>!blocked(r[1])).map(([cat,name,unit,pp,min])=>({id:uid(),name,cat,unit,
     qty:unit==="kg"?Math.max(min,Math.round(pp*people*2)/2):Math.max(min,Math.ceil(pp*people-1e-9)),
-    price:lastPrice(name),size:null,done:false}));
+    price:lastPrice(name),size:null,done:false})).filter(i=>i.qty>0);
 }
 function monthSheet(){
   let n=defaultPeople();
   sheet(`<h2>Lista padrão do mês</h2>
-    <p style="color:var(--muted)">Monto uma compra base para 30 dias, separada por setor do mercado e ajustada às suas preferências. Depois é só tirar ou mudar o que quiser.</p>
+    <p style="color:var(--muted)">Monto a compra de 30 dias pela sua divisão do mês: proteínas, hortifrúti, mercearia, laticínios, padaria, bebidas, congelados, limpeza, higiene, utilidades e pets/bebê.</p>
     <p class="glabel" style="text-align:center">Quantas pessoas na casa?</p>
     <div class="stepper"><button id="m-minus" aria-label="Menos uma pessoa">−</button><output id="m-n">${n}</output><button id="m-plus" aria-label="Mais uma pessoa">+</button></div>
-    <button class="cta alt" id="m-go">Montar minha lista</button>`,(el,close)=>{
+    <label class="field">Orçamento do mês (opcional)<input id="m-budget" type="number" inputmode="decimal" min="0" step="10" value="${S.budget||""}" placeholder="ex.: 1200"></label>
+    <button class="cta alt" id="m-go">Montar minha lista</button>
+    <button class="link" id="m-plan" style="align-self:center">Ver e editar a divisão por categoria</button>`,(el,close)=>{
     const o=el.querySelector("#m-n");
     el.querySelector("#m-minus").onclick=()=>{n=Math.max(1,n-1);o.textContent=n};
     el.querySelector("#m-plus").onclick=()=>{n=Math.min(12,n+1);o.textContent=n};
+    el.querySelector("#m-plan").onclick=()=>{S.budget=parseFloat(el.querySelector("#m-budget").value)||0;save();close();ui.screen="plan";render();scrollTo(0,0)};
     el.querySelector("#m-go").onclick=()=>{
-      S.people=n;const mes=new Date().toLocaleDateString("pt-BR",{month:"long"});
-      const l={id:uid(),name:`Compra do mês · ${mes}`,color:"mint",em:"📅",items:monthItems(n)};
+      S.people=n;S.budget=parseFloat(el.querySelector("#m-budget").value)||0;const mes=new Date().toLocaleDateString("pt-BR",{month:"long"});
+      const l={id:uid(),name:`Compra do mês · ${mes}`,color:"mint",em:"📅",month:true,items:monthItems(n)};
       S.lists.unshift(l);save();close();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast(`${l.items.length} itens para ${n} ${n>1?"pessoas":"pessoa"}.`)};
+  });
+}
+
+/* ---------- Tela: divisão do mês (editável) ---------- */
+function renderPlan(){
+  const P=getPlan(),sum=P.reduce((a,c)=>a+(+c.pct||0),0),B=S.budget||0,ok=Math.round(sum)===100;
+  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="settings" aria-label="Voltar">‹</button><h2 style="font-size:22px">Divisão do mês</h2><button class="link" data-act="plan-reset">Restaurar</button></div>
+    <p style="margin:0;color:var(--muted);line-height:1.45">Essas categorias e sugestões montam a <b>Lista padrão do mês</b>. Mude nomes, tire ou inclua itens e ajuste a parte do orçamento de cada uma.</p>
+    <div class="card"><label class="field">Orçamento do mês (R$, opcional)<input id="p-budget" type="number" inputmode="decimal" min="0" step="10" value="${B||""}" placeholder="ex.: 1200"></label>
+      <div class="pctbar" aria-hidden="true">${P.map((c,i)=>`<i style="flex:${+c.pct||0};background:var(--${COLORS[i%6]})"></i>`).join("")}</div>
+      <div class="meta"><span>Soma das partes</span><span style="color:${ok?"var(--good)":"var(--bad)"}">${sum}%${ok?" ✓":" · o ideal é 100%"}</span></div>
+      <p class="isub" style="margin:0">Divisão de referência. Varia com o perfil da casa.</p></div>
+    ${P.map((c,i)=>`<div class="card pcat" data-ci="${i}">
+      <div class="prow"><span class="cem">${c.em||"🛍️"}</span><input class="pname" data-f="name" value="${esc(c.name)}" aria-label="Nome da categoria"><label class="ppct"><input type="number" data-f="pct" min="0" max="100" step="1" value="${c.pct}" aria-label="Parte do orçamento de ${esc(c.name)}">%</label></div>
+      ${B?`<div class="isub">${brl(B*(+c.pct||0)/100)} por mês</div>`:""}
+      <div class="chips">${c.items.map((it,j)=>`<span class="chip ed">${esc(it.name)}${it.need?` <small>(${it.need==="pet"?"se tiver pet":"se tiver bebê"})</small>`:""}<button data-rm="${j}" aria-label="Tirar ${esc(it.name)}">✕</button></span>`).join("")||`<span class="isub">Nenhum item ainda.</span>`}</div>
+      <div class="adder"><input class="padd" placeholder="Adicionar item (ex.: Azeitona)" aria-label="Adicionar item em ${esc(c.name)}"><button class="btn" data-addi>Adicionar</button></div>
+      <button class="danger" data-delcat style="align-self:flex-start;padding:4px 0">Apagar categoria</button></div>`).join("")}
+    <button class="add-list" data-act="plan-newcat">+ Nova categoria</button>
+    <button class="cta alt" data-act="month">Montar lista do mês com essa divisão</button>
+    ${tabs("settings")}</div>`;
+}
+function bindPlan(A){
+  const setPlan=(f,focus)=>{const P=getPlan();f(P);S.plan=P;save();render();if(focus!=null)A.querySelector(`.pcat[data-ci="${focus}"] .padd`)?.focus()};
+  const b=$("#p-budget");if(b)b.onchange=()=>{S.budget=parseFloat(b.value)||0;save();render()};
+  A.querySelectorAll(".pcat").forEach(card=>{const i=+card.dataset.ci;
+    card.querySelector("[data-f=name]").onchange=e=>setPlan(P=>{P[i].name=e.target.value.trim()||P[i].name});
+    card.querySelector("[data-f=pct]").onchange=e=>setPlan(P=>{P[i].pct=Math.max(0,Math.min(100,Math.round(parseFloat(e.target.value)||0)))});
+    card.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>setPlan(P=>{P[i].items.splice(+x.dataset.rm,1)}));
+    const inp=card.querySelector(".padd"),add=()=>{const v=inp.value.trim();if(!v)return;
+      setPlan(P=>v.split(/[,;]/).map(t=>t.trim()).filter(Boolean).forEach(t=>P[i].items.push({name:t.charAt(0).toUpperCase()+t.slice(1),unit:"un",pp:.5,min:1})),i)};
+    inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}};card.querySelector("[data-addi]").onclick=add;
+    const del=card.querySelector("[data-delcat]");del.onclick=()=>{if(!del.dataset.armed){del.dataset.armed=1;del.textContent="Toque de novo pra apagar";return}setPlan(P=>{P.splice(i,1)})};
   });
 }
 
@@ -680,6 +748,8 @@ function reviewCupom(r,raw,failed){
     };
   });
 }
+
+function selectMail(){const el=$("#dev-mail");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}
 
 /* ---------- Instalar no celular (PWA) ---------- */
 const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
