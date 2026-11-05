@@ -228,6 +228,12 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .pkg.editing .chip.ed{background:var(--card)}
 .pkg .prow{align-items:center}
 .ldate{font-weight:600;font-size:15px}
+.share-opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border-radius:22px;padding:14px 16px;background:var(--surface);color:var(--fg);text-decoration:none}
+.share-opt .em{font-size:28px;flex:none}
+.share-opt .t{flex:1;min-width:0;line-height:1.35;font-size:14px;color:var(--muted)}
+.share-opt .t b{display:block;font-size:17px;color:var(--fg);margin-bottom:2px}
+.share-opt.main{background:#25D366;color:#0B2E17}
+.share-opt.main .t,.share-opt.main .t b{color:#0B2E17}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
 .credit svg{width:28px;height:28px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
@@ -242,7 +248,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.8.0";
+const VERSION = "1.9.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -309,7 +315,8 @@ async function idbGet(k){const db=await IDBP;if(!db)return null;return new Promi
 async function idbSet(k,v){const db=await IDBP;if(!db)return;try{db.transaction("kv","readwrite").objectStore("kv").put(v,k)}catch(e){}}
 function save(){const j=JSON.stringify(S);try{localStorage.setItem(KEY,j)}catch(e){}idbSet(KEY,j)}
 function applyTheme(t){if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
-applyTheme(S.onboarded?S.theme:ui.ob.theme);
+const SH0=readShared();if(SH0){ui.screen="shared";ui.shared=SH0}
+applyTheme(S.onboarded?S.theme:(SH0?"system":ui.ob.theme));
 
 function toast(m){const old=$(".toast");old&&old.remove();const d=document.createElement("div");d.className="toast";d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
 const mascot=(s=150,cls="")=>`<div class="mascot ${cls}" style="--s:${s}px" aria-hidden="true"><div class="leaf"></div><div class="body"></div><i class="eye l"></i><i class="eye r"></i><i class="cheek l"></i><i class="cheek r"></i></div>`;
@@ -332,7 +339,7 @@ function blocked(name){if(/aveia|vegetal|sem lactose|sem glúten|de soja|de coco
 /* ---------- Render ---------- */
 function render(){
   const a=$("#app");
-  const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings,plan:renderPlan,pick:renderPick}[ui.screen];
+  const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings,plan:renderPlan,pick:renderPick,shared:renderShared}[ui.screen];
   a.innerHTML=f();a.firstElementChild?.classList.add("fade");bind();
   if(ui.screen==="onb"&&!S.onboarded){S.obDraft={step:ui.step,ob:ui.ob};save()}
 }
@@ -403,7 +410,7 @@ function renderList(){
     <div class="adder"><textarea id="add-txt" placeholder="Digite ou cole uma receita…" aria-label="Adicionar itens"></textarea>
       <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
     <p class="hint">Dica: "2 leite, pão, café x3" vira 3 itens de uma vez.</p>
-    <div class="actions"><button class="btn" data-act="cupom">📷 Ler cupom fiscal</button>${hasCat?"":`<button class="btn" data-act="month">📅 Lista padrão do mês</button>`}</div>
+    <div class="actions"><button class="btn" data-act="share-list">📤 Enviar lista</button><button class="btn" data-act="cupom">📷 Ler cupom fiscal</button>${hasCat?"":`<button class="btn" data-act="month">📅 Lista padrão do mês</button>`}</div>
     ${sugg.length?`<div><p class="sec">Sugestões do Moranguito</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
     ${l.items.length?`${pendHtml}${done.length?`<p class="sec">No carrinho</p><ul class="items">${done.map(row).join("")}</ul>`:""}`
       :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Adiciona aí em cima ou toca numa sugestão.</p></div>`}
@@ -551,6 +558,7 @@ function bind(){
   const A=$("#app");
   if(ui.screen==="plan")bindPlan(A);
   if(ui.screen==="pick")bindPick(A);
+  if(ui.screen==="shared")bindShared(A);
   A.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=b.dataset.act,o=ui.ob,l=S.lists.find(x=>x.id===ui.listId);
     if(a==="next"){ui.step++;render()}
@@ -565,6 +573,7 @@ function bind(){
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
     else if(a==="month")monthSheet();
+    else if(a==="share-list")shareSheet(S.lists.find(x=>x.id===ui.listId));
     else if(a==="plan-open"){ui.planFrom=b.dataset.from||"settings";ui.screen="plan";render();scrollTo(0,0)}
     else if(a==="backup")backupSheet();
     else if(a==="restore")restoreSheet(false);
@@ -667,7 +676,7 @@ function renderPick(){
     <div class="grid2"><label class="field">Data da compra<input id="pk-date" type="date" value="${pk.date}"></label>
       <label class="field">Nome (opcional)<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>
     <input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar na relação" aria-label="Buscar item na relação">
-    <button class="promo c-sun" data-act="plan-open" data-from="pick"><span class="em">🗂️</span><span class="t"><b>Editar divisão</b>Categorias, itens sugeridos e a parte do orçamento de cada uma.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
+    <button class="btn" data-act="plan-open" data-from="pick" style="align-self:flex-start;min-height:38px;padding:0 14px;font-size:14px">🗂️ Editar divisão</button>
     <p class="hint" style="margin:0">Toque no que vai comprar. Quantidade e preço você ajusta depois, na lista.</p>
     <div class="adder"><input id="pk-new" class="padd" placeholder="Não achou? Inclua outro item" aria-label="Incluir outro item"><button class="btn" id="pk-add">Incluir</button></div>
     ${cats.map(c=>{const em=(plan.find(x=>x.name===c)||{}).em||(c.startsWith("Já")?"🕘":"🛍️"),its=R.filter(i=>i.cat===c);
@@ -852,6 +861,91 @@ function reviewCupom(r,raw,failed){
 
 function selectMail(){const el=$("#dev-mail");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}
 
+/* ---------- Enviar lista (WhatsApp) ---------- */
+const APP_URL="https://compras-mercado-xi.vercel.app/";
+function b64u(str){return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(t){t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";return decodeURIComponent(escape(atob(t)))}
+function hashStr(t){let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)}
+function listPayload(l){return{n:l.name,d:l.date||"",i:l.items.map(i=>[i.name,i.qty,i.unit||"un",i.cat||"",i.done?1:0])}}
+function shareUrl(l){return APP_URL+"#lista="+b64u(JSON.stringify(listPayload(l)))}
+const qtyTxt=(q,u)=>(q===1&&(u||"un")==="un")?"":` (${String(q).replace(".",",")} ${u})`;
+function groupItems(items){const order=[...new Set([...getPlan().map(c=>c.name),...items.map(i=>i.cat||"Itens")])];return order.map(c=>[c,items.filter(i=>(i.cat||"Itens")===c)]).filter(g=>g[1].length)}
+function listText(l){
+  let t=`🛒 *${l.name}*${l.date&&!l.name.includes(fmtD(l.date))?` · ${fmtD(l.date)}`:""}\n`;
+  groupItems(l.items).forEach(([c,its])=>{t+=`\n_${c}_\n`+its.map(i=>`${i.done?"☑":"☐"} ${i.name}${qtyTxt(i.qty,i.unit)}`).join("\n")+"\n"});
+  return t+`\nFeito com Compras Mercado`;
+}
+function listHtml(l){
+  const id=hashStr(l.id+l.name+(l.date||"")),e=esc;
+  const groups=groupItems(l.items).map(([c,its])=>`<h2>${e(c)}</h2>`+its.map((i,k)=>{const key=e(c)+"-"+k;return `<label><input type="checkbox" id="${key}"${i.done?" checked":""}><span>${e(i.name)}</span><small>${e(qtyTxt(i.qty,i.unit).replace(/^ \(|\)$/g,""))}</small></label>`}).join("")).join("");
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(l.name)}</title><style>
+:root{--bg:#FFFBF7;--fg:#1A1512;--mut:#6F655E;--line:#E6DED6;--acc:#FF3D68;--card:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0E0C0B;--fg:#F7F1EB;--mut:#A79C93;--line:#2F2925;--card:#1C1917}}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:26px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 12px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin:22px 4px 8px}
+label{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin:0 0 6px;cursor:pointer}
+input{width:26px;height:26px;accent-color:var(--acc);flex:none;margin:0}
+input:checked+span{text-decoration:line-through;color:var(--mut)}
+small{color:var(--mut);margin-left:auto;white-space:nowrap}
+footer{margin-top:24px;text-align:center;color:var(--mut);font-size:13px}
+</style></head><body><main><h1>🛒 ${e(l.name)}</h1><p class="sub">${l.date?e(fmtLong(l.date))+" · ":""}<span id="c"></span></p><div class="bar"><i id="b"></i></div>
+${groups}
+<footer>Feito com Compras Mercado · DomDevLabs</footer></main>
+<script>var K="cm-${id}",s={};try{s=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
+var bx=[].slice.call(document.querySelectorAll("input"));
+function u(){var n=bx.filter(function(x){return x.checked}).length;document.getElementById("c").textContent=n+" de "+bx.length+" no carrinho";document.getElementById("b").style.width=(bx.length?n/bx.length*100:0)+"%"}
+bx.forEach(function(x){if(x.id in s)x.checked=s[x.id];x.onchange=function(){s[x.id]=x.checked;try{localStorage.setItem(K,JSON.stringify(s))}catch(e){}u()}});u();<\/script></body></html>`;
+}
+const slug=t=>norm(t).replace(/\s+/g,"-").slice(0,40)||"lista";
+async function shareHtml(l){
+  const fn=`${slug(l.name)}.html`,file=new File([listHtml(l)],fn,{type:"text/html"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:l.name});return}}catch(e){if(e&&e.name==="AbortError")return}
+  try{const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("Arquivo salvo. Envie pelo WhatsApp como documento.")}
+  catch(e){toast("Não deu para gerar o arquivo aqui. Use o link.")}
+}
+function shareSheet(l){
+  if(!l)return;
+  const url=shareUrl(l),msg=`🛒 ${l.name}${l.date&&!l.name.includes(fmtD(l.date))?` (${fmtD(l.date)})`:""}: abra para ir marcando os itens\n${url}`;
+  sheet(`<h2>Enviar lista</h2><p style="color:var(--muted)">${l.items.length} ${l.items.length===1?"item":"itens"}. Escolha como mandar pelo WhatsApp.</p>
+    <a class="share-opt main" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener"><span class="em">🔗</span><span class="t"><b>Link para ir marcando</b>Abre a lista no navegador. Quem receber toca nos itens para marcar e pode salvar no próprio app.</span></a>
+    <button class="share-opt" id="sh-html"><span class="em">📄</span><span class="t"><b>Arquivo HTML</b>Página com caixinhas para marcar. Vai como documento; abra no Safari ou no Chrome.</span></button>
+    <a class="share-opt" href="https://wa.me/?text=${encodeURIComponent(listText(l))}" target="_blank" rel="noopener"><span class="em">💬</span><span class="t"><b>Texto com ☐</b>Lista simples na conversa, separada por categoria.</span></a>
+    <button class="btn" id="sh-copy" style="align-self:center">Copiar link</button>`,(el,close)=>{
+    el.querySelector("#sh-html").onclick=()=>shareHtml(l);
+    el.querySelector("#sh-copy").onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>toast("Link copiado."),()=>toast("Não deu para copiar aqui."))}catch(e){toast("Não deu para copiar aqui.")}};
+  });
+}
+/* lista recebida por link */
+function readShared(){const h=location.hash||"";if(!h.startsWith("#lista="))return null;try{const d=JSON.parse(unb64u(h.slice(7)));return d&&Array.isArray(d.i)?d:null}catch(e){return null}}
+const shKey=()=>"cm-sh-"+hashStr(location.hash||"");
+function shState(){try{return JSON.parse(localStorage.getItem(shKey()))||{}}catch(e){return{}}}
+function renderShared(){
+  const d=ui.shared,st=shState();
+  const items=d.i.map((x,j)=>({j,name:x[0],qty:x[1],unit:x[2],cat:x[3]||"Itens",done:j in st?st[j]:!!x[4]}));
+  const n=items.filter(i=>i.done).length;
+  return `<div class="screen"><div class="topbar"><span class="tag">Lista recebida</span>${S.onboarded?`<button class="link" data-act="sh-close">Abrir meu app</button>`:""}</div>
+    <div class="lhead c-sky"><h2>🛒 ${esc(d.n)}</h2>${d.d?`<div class="ldate">📅 ${fmtLong(d.d)}</div>`:""}<div class="bar"><i style="width:${items.length?n/items.length*100:0}%"></i></div>
+      <div class="meta"><span>${n} de ${items.length} no carrinho</span></div></div>
+    <p class="hint" style="margin:0">Toque no item quando colocar no carrinho.</p>
+    ${groupItems(items).map(([c,its])=>`<p class="sec">${esc(c)} · ${its.length}</p><ul class="items">${its.map(i=>`<li class="item ${i.done?"done":""}"><button class="check" data-shk="${i.j}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?"✓":""}</button><button class="ibody" data-shk="${i.j}"><div class="iname">${esc(i.name)}</div><div class="isub">${String(i.qty).replace(".",",")} ${esc(i.unit)}</div></button></li>`).join("")}</ul>`).join("")}
+    <button class="cta alt" data-act="sh-save">Salvar nas minhas listas</button>
+    <p class="hint" style="text-align:center;margin:0">Feito com Compras Mercado · DomDevLabs</p></div>`;
+}
+function bindShared(A){
+  A.querySelectorAll("[data-shk]").forEach(b=>b.onclick=()=>{const st=shState(),j=+b.dataset.shk,cur=j in st?st[j]:!!ui.shared.i[j][4];st[j]=!cur;
+    try{localStorage.setItem(shKey(),JSON.stringify(st))}catch(e){}const y=scrollY;render();scrollTo(0,y)});
+  const leave=()=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}};
+  A.querySelectorAll("[data-act=sh-close]").forEach(b=>b.addEventListener("click",()=>{leave();ui.screen="home";render()}));
+  A.querySelectorAll("[data-act=sh-save]").forEach(b=>b.addEventListener("click",()=>{const d=ui.shared,st=shState();
+    const l={id:uid(),name:d.n||"Lista recebida",date:d.d||todayISO(),color:"sky",em:"🛒",items:d.i.map((x,j)=>({id:uid(),name:x[0],qty:x[1]||1,unit:x[2]||"un",cat:x[3]||"",price:lastPrice(x[0]),size:null,done:j in st?!!st[j]:!!x[4]}))};
+    if(!S.onboarded){S.onboarded=true;S.theme="system";delete S.obDraft}
+    S.lists.unshift(l);save();leave();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast("Lista salva no seu app.")}));
+}
+window.addEventListener("hashchange",()=>{const d=readShared();if(d){ui.shared=d;ui.screen="shared";render();scrollTo(0,0)}});
+
 /* ---------- Backup ---------- */
 function backupCode(){const d={...S};delete d.obDraft;return "CM1:"+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
 function readBackup(txt){let t=String(txt||"").trim();if(!t)return null;try{if(t.startsWith("CM1:"))t=decodeURIComponent(escape(atob(t.slice(4).replace(/\s/g,""))));const d=JSON.parse(t);return d&&Array.isArray(d.lists)?d:null}catch(e){return null}}
@@ -907,7 +1001,7 @@ idbGet(KEY).then(raw=>{
   // só recupera se aqui não há cadastro feito, ou se a cópia tem mais conteúdo
   if(!S.onboarded&&(d.onboarded||d.obDraft)){S=Object.assign(blank(),d);try{localStorage.setItem(KEY,raw)}catch(e){}
     applyTheme(S.onboarded?S.theme:(S.obDraft?.ob?.theme||"dark"));
-    ui.screen=S.onboarded?"home":"onb";ui.step=S.obDraft?.step||0;if(S.obDraft?.ob)ui.ob=S.obDraft.ob;render()}
+    if(ui.screen!=="shared")ui.screen=S.onboarded?"home":"onb";ui.step=S.obDraft?.step||0;if(S.obDraft?.ob)ui.ob=S.obDraft.ob;render()}
   else if(S.onboarded)idbSet(KEY,cur);
 });
 $("#cupom-file").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(f)readCupom(f)});
