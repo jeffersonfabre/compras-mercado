@@ -1,6 +1,6 @@
 # Compras Mercado
 
-App web (PWA) de lista de compras com o mascote Moranguito. Feito por **DomDevLabs** · domdevlabs@gmail.com · v2.0.0
+App web (PWA) de lista de compras Feito por **DomDevLabs** · domdevlabs@gmail.com · v2.0.1
 
 ## Como usar
 1. **Cadastro de 1 tela:** seu nome e quantas pessoas moram na casa.

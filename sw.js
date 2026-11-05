@@ -1,5 +1,5 @@
-// Compras Mercado — service worker (v2.0.0)
-const C = "cm-v2.0.0", RT = "cm-runtime";
+// Compras Mercado — service worker (v2.0.1)
+const C = "cm-v2.0.1", RT = "cm-runtime";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/domdevlabs-logo.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {

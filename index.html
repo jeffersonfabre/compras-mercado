@@ -270,7 +270,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "2.0.0";
+const VERSION = "2.0.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -341,9 +341,10 @@ const SH0=readShared();if(SH0){ui.screen="shared";ui.shared=SH0}
 applyTheme(S.onboarded?S.theme:"system");
 
 function toast(m){const old=$(".toast");old&&old.remove();const d=document.createElement("div");d.className="toast";d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
-const mascot=(s=150,cls="")=>`<div class="mascot ${cls}" style="--s:${s}px" aria-hidden="true"><div class="leaf"></div><div class="body"></div><i class="eye l"></i><i class="eye r"></i><i class="cheek l"></i><i class="cheek r"></i></div>`;
+const mascot=()=>"";
+const _mascotOld=(s=150,cls="")=>`<div class="mascot ${cls}" style="--s:${s}px" aria-hidden="true"><div class="leaf"></div><div class="body"></div><i class="eye l"></i><i class="eye r"></i><i class="cheek l"></i><i class="cheek r"></i></div>`;
 const dots=(n,cur)=>`<div class="dots" aria-label="Passo ${cur+1} de ${n}">${Array.from({length:n},(_,i)=>`<i class="${i<cur?"on":i===cur?"cur":""}"></i>`).join("")}</div>`;
-const tone=()=>TONES[S.tone]||TONES.animado;
+const tone=()=>TONES.direto; // sem avatar: mensagens neutras
 
 /* ---------- Parsing de texto/receita ---------- */
 function parseItems(txt){
@@ -369,10 +370,8 @@ function render(){
 function renderOnb(){
   const o=ui.ob;
   return `<div class="screen onb1">
-    <div class="hero" style="min-height:190px"><span class="float" style="left:8%;top:10%">🥦</span><span class="float" style="right:10%;top:6%">🍌</span>
-    <span class="float" style="left:4%;bottom:14%">🥑</span><span class="float" style="right:6%;bottom:20%">🍓</span>${mascot(160)}</div>
-    <h1>Oi! Eu sou o Moranguito.</h1>
-    <p class="sub">Eu organizo suas compras do mercado. Só duas coisas para começar:</p>
+    <h1 style="margin-top:24px">Compras Mercado</h1>
+    <p class="sub">Monte a lista, marque no mercado e salve os preços do cupom. Para começar:</p>
     <label class="field">Seu nome<input id="ob-name" value="${esc(o.name)}" placeholder="Como te chamo?" maxlength="30" autocomplete="given-name"></label>
     <div class="field">Quantas pessoas moram na casa?<div class="stepper"><button data-act="ob-minus" aria-label="Menos uma pessoa">−</button><output id="ob-n">${o.people}</output><button data-act="ob-plus" aria-label="Mais uma pessoa">+</button></div></div>
     <button class="cta alt" data-act="finish">Começar</button>
@@ -392,7 +391,7 @@ function renderHome(){
   const doneRow=l=>{const t=l.total||doneTotal(l);return `<button class="hrow" data-open="${l.id}"><span><b>${esc(l.name)}</b><small>${l.date?fmtD(l.date)+" · ":""}${l.items.filter(i=>i.done).length} itens</small></span><span class="htot">${t?brl(t):"—"}</span></button>`};
   return `<div class="screen"><div class="topbar"><h2>${S.name?`Oi, ${esc(S.name)}!`:"Minhas listas"}</h2><span class="tag">v${VERSION}</span></div>
     ${open.length?`<p class="sec">Listas abertas</p><div class="pills">${open.map(openCard).join("")}</div>`
-      :`<div class="empty">${mascot(90)}<p>${esc(tone().hi(S.name))}<br>Toque em <b>+ Nova lista</b> para começar.</p></div>`}
+      :`<div class="empty">${mascot(90)}<p>Nenhuma lista aberta.<br>Toque em <b>+ Nova lista</b> para começar.</p></div>`}
     ${done.length?`<p class="sec">Compras concluídas</p><div class="hist">${done.map(doneRow).join("")}</div>`:""}
     ${tabs("home",`<button class="cta alt" data-act="pick">+ Nova lista</button>`)}</div>`;
 }
@@ -420,7 +419,7 @@ function renderList(){
   let body="";
   if(stage==="montar") body=`<div class="adder"><textarea id="add-txt" placeholder="Adicionar item… ex.: 2 leite, pão" aria-label="Adicionar itens"></textarea>
       <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
-    ${sugg.length?`<div><p class="sec">Sugestões do Moranguito</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
+    ${sugg.length?`<div><p class="sec">Sugestões</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
     ${l.items.length?`<p class="hint" style="margin:0">Toque num item para mudar quantidade, preço ou remover.</p>${grouped(l.items,rowEdit)}<button class="cta alt" data-stage="mercado">Ir para o mercado →</button>`
       :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Escreva ou fale os itens aqui em cima.</p></div>`}`;
   else if(stage==="mercado") body=`<p class="hint" style="margin:0">Toque no item quando colocar no carrinho.</p>
@@ -443,7 +442,7 @@ function monthKey(d){return d.slice(0,7)}
 function renderInsights(){
   const H=S.history,P=S.purchases;
   if(!H.length) return `<div class="screen"><div class="topbar"><h2>Gastos</h2></div>
-    <div class="empty">${mascot(110,"think")}<p>Quando você concluir uma compra com o cupom fiscal, eu mostro aqui quanto gastou no mês, quanto cada produto subiu e quando a embalagem encolheu.</p>
+    <div class="empty">${mascot(110,"think")}<p>Quando você concluir uma compra com o cupom fiscal, aparece aqui quanto gastou no mês, quanto cada produto subiu e quando a embalagem encolheu.</p>
     <button class="cta" data-act="sample">Ver com dados de exemplo</button></div>${tabs("insights")}</div>`;
   const now=new Date(),months=[];for(let k=5;k>=0;k--){const d=new Date(now.getFullYear(),now.getMonth()-k,1);months.push(d.toISOString().slice(0,7))}
   const byM=Object.fromEntries(months.map(m=>[m,0]));P.forEach(p=>{const m=monthKey(p.date);if(m in byM)byM[m]+=p.total});
@@ -476,8 +475,7 @@ function renderSettings(){
     ${card("Você",`<label class="field">Seu nome<input id="st-name" value="${esc(S.name)}" placeholder="Como te chamo?" maxlength="30"></label>
       <div class="field">Pessoas na casa<div class="stepper" style="justify-content:flex-start"><button data-act="st-minus" aria-label="Menos uma pessoa">−</button><output id="st-n">${S.people||defaultPeople()}</output><button data-act="st-plus" aria-label="Mais uma pessoa">+</button></div></div>`)}
     ${card("Meus itens e categorias",`${mut(`${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. São os itens que aparecem na Nova lista.`)}<button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar itens e categorias</button>`)}
-    ${card("Aparência",`<div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div>
-      <p class="glabel" style="margin-top:6px">Jeito do Moranguito falar</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div>`)}
+    ${card("Aparência",`<div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div>`)}
     ${card("Preferências da casa",`${mut("Ajustam as sugestões e a compra do mês.")}${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}`)}
     ${card("Backup",`${mut("Guarde uma cópia das suas listas e preços para trocar de celular ou passar do navegador para o app instalado.")}
       <div class="actions"><button class="btn dark" data-act="backup">Copiar backup</button><button class="btn" data-act="restore">Restaurar backup</button></div>
