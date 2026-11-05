@@ -13,6 +13,6 @@ App web (PWA) de lista de compras com o mascote Moranguito.
 
 Arquivos: `index.html`, `manifest.webmanifest`, `sw.js`, `icons/`. Sem build.
 
-Feito por **DomDevLabs** · domdevlabs@gmail.com · v1.7.0
+Feito por **DomDevLabs** · domdevlabs@gmail.com · v1.8.0
 
 Logo oficial em `icons/domdevlabs-logo.png`.

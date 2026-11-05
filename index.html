@@ -242,7 +242,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.7.0";
+const VERSION = "1.8.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -450,7 +450,7 @@ function renderSettings(){
     <div class="card"><p class="glabel">Tema</p><div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div></div>
     <div class="card"><p class="glabel">Tom do Moranguito</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div></div>
     <div class="card"><p class="glabel">Preferências</p>${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}</div>
-    <div class="card"><p class="glabel">Divisão das compras do mês</p><p style="margin:0;color:var(--muted);line-height:1.45">${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. Mude as sugestões e a parte do orçamento de cada uma.</p><button class="btn dark" data-go="plan" style="align-self:flex-start">Editar divisão</button></div>
+    <div class="card"><p class="glabel">Divisão das compras do mês</p><p style="margin:0;color:var(--muted);line-height:1.45">${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. Mude as sugestões e a parte do orçamento de cada uma.</p><button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar divisão</button></div>
     <div class="card"><p class="glabel">App no celular</p>${isStandalone()?`<p style="margin:0">✓ Você já está usando o app instalado.</p>`:`<p style="margin:0;color:var(--muted);line-height:1.45">Instale para abrir direto da tela inicial, como um app, e usar sem internet.</p><button class="btn dark" data-act="install" style="align-self:flex-start">📲 Instalar no celular</button>`}</div>
     <div class="card"><p class="glabel">Backup dos seus dados</p><p style="margin:0;color:var(--muted);line-height:1.45">Guarde uma cópia das suas listas, preços e preferências. Serve para trocar de celular ou passar do navegador para o app instalado.</p>
       <div class="actions"><button class="btn dark" data-act="backup">Copiar backup</button><button class="btn" data-act="restore">Restaurar backup</button></div>
@@ -565,6 +565,7 @@ function bind(){
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
     else if(a==="month")monthSheet();
+    else if(a==="plan-open"){ui.planFrom=b.dataset.from||"settings";ui.screen="plan";render();scrollTo(0,0)}
     else if(a==="backup")backupSheet();
     else if(a==="restore")restoreSheet(false);
     else if(a==="pick"){ui.pick={date:todayISO(),name:"",sel:{},extra:[]};ui.screen="pick";render();scrollTo(0,0)}
@@ -640,7 +641,7 @@ function monthSheet(){
     const o=el.querySelector("#m-n");
     el.querySelector("#m-minus").onclick=()=>{n=Math.max(1,n-1);o.textContent=n};
     el.querySelector("#m-plus").onclick=()=>{n=Math.min(12,n+1);o.textContent=n};
-    el.querySelector("#m-plan").onclick=()=>{S.budget=parseFloat(el.querySelector("#m-budget").value)||0;save();close();ui.screen="plan";render();scrollTo(0,0)};
+    el.querySelector("#m-plan").onclick=()=>{S.budget=parseFloat(el.querySelector("#m-budget").value)||0;save();close();ui.planFrom="settings";ui.screen="plan";render();scrollTo(0,0)};
     el.querySelector("#m-go").onclick=()=>{
       S.people=n;S.budget=parseFloat(el.querySelector("#m-budget").value)||0;const mes=new Date().toLocaleDateString("pt-BR",{month:"long"});
       const l={id:uid(),name:`Compra do mês · ${mes}`,color:"mint",em:"📅",month:true,items:monthItems(n)};
@@ -666,6 +667,7 @@ function renderPick(){
     <div class="grid2"><label class="field">Data da compra<input id="pk-date" type="date" value="${pk.date}"></label>
       <label class="field">Nome (opcional)<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>
     <input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar na relação" aria-label="Buscar item na relação">
+    <button class="promo c-sun" data-act="plan-open" data-from="pick"><span class="em">🗂️</span><span class="t"><b>Editar divisão</b>Categorias, itens sugeridos e a parte do orçamento de cada uma.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
     <p class="hint" style="margin:0">Toque no que vai comprar. Quantidade e preço você ajusta depois, na lista.</p>
     <div class="adder"><input id="pk-new" class="padd" placeholder="Não achou? Inclua outro item" aria-label="Incluir outro item"><button class="btn" id="pk-add">Incluir</button></div>
     ${cats.map(c=>{const em=(plan.find(x=>x.name===c)||{}).em||(c.startsWith("Já")?"🕘":"🛍️"),its=R.filter(i=>i.cat===c);
@@ -717,7 +719,7 @@ function createPicked(){
 /* ---------- Tela: divisão do mês (editável) ---------- */
 function renderPlan(){
   const P=getPlan(),sum=P.reduce((a,c)=>a+(+c.pct||0),0),B=S.budget||0,ok=Math.round(sum)===100;
-  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="settings" aria-label="Voltar">‹</button><h2 style="font-size:22px">Divisão do mês</h2><button class="link" data-act="plan-reset">Restaurar</button></div>
+  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="${ui.planFrom==="pick"&&ui.pick?"pick":"settings"}" aria-label="Voltar">‹</button><h2 style="font-size:22px">Divisão do mês</h2><button class="link" data-act="plan-reset">Restaurar</button></div>
     <p style="margin:0;color:var(--muted);line-height:1.45">Essas categorias e sugestões montam a <b>Lista padrão do mês</b>. Mude nomes, tire ou inclua itens e ajuste a parte do orçamento de cada uma.</p>
     <div class="card"><label class="field">Orçamento do mês (R$, opcional)<input id="p-budget" type="number" inputmode="decimal" min="0" step="10" value="${B||""}" placeholder="ex.: 1200"></label>
       <div class="pctbar" aria-hidden="true">${P.map((c,i)=>`<i style="flex:${+c.pct||0};background:var(--${COLORS[i%6]})"></i>`).join("")}</div>
@@ -730,7 +732,7 @@ function renderPlan(){
       <div class="adder"><input class="padd" placeholder="Adicionar item (ex.: Azeitona)" aria-label="Adicionar item em ${esc(c.name)}"><button class="btn" data-addi>Adicionar</button></div>
       <button class="danger" data-delcat style="align-self:flex-start;padding:4px 0">Apagar categoria</button></div>`).join("")}
     <button class="add-list" data-act="plan-newcat">+ Nova categoria</button>
-    <button class="cta alt" data-act="month">Montar lista do mês com essa divisão</button>
+    ${ui.planFrom==="pick"&&ui.pick?`<button class="cta alt" data-go="pick">Voltar para a nova lista</button>`:`<button class="cta alt" data-act="month">Montar lista do mês com essa divisão</button>`}
     ${tabs("settings")}</div>`;
 }
 function bindPlan(A){
