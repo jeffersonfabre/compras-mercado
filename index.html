@@ -234,6 +234,28 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .share-opt .t b{display:block;font-size:17px;color:var(--fg);margin-bottom:2px}
 .share-opt.main{background:#25D366;color:#0B2E17}
 .share-opt.main .t,.share-opt.main .t b{color:#0B2E17}
+.steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.st{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border-radius:99px;background:var(--surface);color:var(--muted);font-weight:700;font-size:14px;padding:0 6px}
+.st b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--fg);font-size:12px;flex:none}
+.st.on{background:var(--ink);color:var(--on-ink)}
+.st.on b{background:var(--tomato);color:#1A1512}
+.st.past b{background:var(--good);color:#fff}
+.mrow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:4px 2px;min-height:48px}
+.mrow .ibody{display:flex;flex-direction:column}
+.item.big{padding:10px 14px}
+.item.big .iname{font-size:19px}
+.item.big .check{width:36px;height:36px;font-size:18px}
+.tabbar .fab{grid-column:1/-1;padding:0 0 8px}
+.hist{display:flex;flex-direction:column;gap:6px}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 16px;text-align:left;width:100%}
+.hrow>span:first-child{min-width:0}
+.hrow b{display:block;overflow-wrap:anywhere}
+.hrow small{display:block;color:var(--muted);font-size:13px}
+.hrow .htot{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.donebox{border-radius:24px;padding:16px 18px;background:color-mix(in srgb,var(--good) 16%,transparent);display:flex;flex-direction:column;gap:4px;line-height:1.4}
+.donebox b{font-size:17px}
+.onb1 .stepper{justify-content:flex-start}
+.onb1 .field{color:var(--fg);font-size:15px}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
 .credit svg{width:28px;height:28px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
@@ -248,7 +270,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.9.1";
+const VERSION = "2.0.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -305,7 +327,7 @@ const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})(
 let deferredPrompt = null;
 
 let S = load();
-let ui = {screen:S.onboarded?"home":"onb", step:S.obDraft?.step||0, listId:null, ob:S.obDraft?.ob||{theme:S.theme||"dark",prefs:[...(S.prefs||[])],first:"Mercado do mês",custom:"",tone:"animado",name:""}};
+let ui = {screen:S.onboarded?"home":"onb", step:0, listId:null, ob:{name:S.obDraft?.ob?.name||"",people:S.obDraft?.ob?.people||2}};
 
 function blank(){return {onboarded:false,theme:"system",prefs:[],tone:"animado",name:"",lists:[],history:[],purchases:[],sample:false}}
 function load(){try{const r=localStorage.getItem(KEY);if(r)return Object.assign(blank(),JSON.parse(r))}catch(e){}return blank()}
@@ -316,7 +338,7 @@ async function idbSet(k,v){const db=await IDBP;if(!db)return;try{db.transaction(
 function save(){const j=JSON.stringify(S);try{localStorage.setItem(KEY,j)}catch(e){}idbSet(KEY,j)}
 function applyTheme(t){if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
 const SH0=readShared();if(SH0){ui.screen="shared";ui.shared=SH0}
-applyTheme(S.onboarded?S.theme:(SH0?"system":ui.ob.theme));
+applyTheme(S.onboarded?S.theme:"system");
 
 function toast(m){const old=$(".toast");old&&old.remove();const d=document.createElement("div");d.className="toast";d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
 const mascot=(s=150,cls="")=>`<div class="mascot ${cls}" style="--s:${s}px" aria-hidden="true"><div class="leaf"></div><div class="body"></div><i class="eye l"></i><i class="eye r"></i><i class="cheek l"></i><i class="cheek r"></i></div>`;
@@ -345,87 +367,84 @@ function render(){
 }
 
 function renderOnb(){
-  const st=ui.step,o=ui.ob,N=5;
-  const top=st===0?`<div class="topbar" style="justify-content:center">${dots(N,0)}</div>`:
-    `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="Voltar">‹</button>${dots(N,st)}<button class="link" data-act="skip-all">Pular</button></div>`;
-  if(st===0) return `<div class="screen">${top}
-    <div class="hero"><span class="float" style="left:8%;top:10%">🥦</span><span class="float" style="right:10%;top:6%">🍌</span>
-    <span class="float" style="left:4%;bottom:14%">🥑</span><span class="float" style="right:6%;bottom:20%">🍓</span>${mascot(190)}</div>
+  const o=ui.ob;
+  return `<div class="screen onb1">
+    <div class="hero" style="min-height:190px"><span class="float" style="left:8%;top:10%">🥦</span><span class="float" style="right:10%;top:6%">🍌</span>
+    <span class="float" style="left:4%;bottom:14%">🥑</span><span class="float" style="right:6%;bottom:20%">🍓</span>${mascot(160)}</div>
     <h1>Oi! Eu sou o Moranguito.</h1>
-    <p class="sub">Eu organizo suas listas e aprendo com cada compra. Antes, 4 perguntas rápidas pra eu te conhecer.</p>
-    <div class="row"><button class="ghost" data-act="have">Já usei antes</button><button class="cta" style="flex:1" data-act="next">Vamos lá</button></div>${showInstall()?`<button class="link" data-act="install" style="align-self:center">📲 Instalar no celular</button>`:""}</div>`;
-  if(st===1) return `<div class="screen">${top}<div class="hero">${mascot(140)}</div>
-    <h1>Você prefere o app claro ou escuro?</h1><p class="sub">Dá para trocar depois.</p>
-    <div class="themes">${["light","dark"].map(t=>`<button class="tcard ${t} ${o.theme===t?"sel":""}" data-theme-pick="${t}" aria-pressed="${o.theme===t}">
-      <div class="tprev"><b class="c-tomato"></b><b class="c-sky"></b><b class="c-sun"></b><b style="background:${t==="light"?"#fff":"#F7F1EB"}"></b></div>${t==="light"?"Claro":"Escuro"}</button>`).join("")}</div>
-    <p class="hint" style="text-align:center;margin:0">Toque em uma opção para seguir.</p></div>`;
-  if(st===2) return `<div class="screen">${top}<div class="hero" style="min-height:120px;flex:none">${mascot(90,"think")}</div>
-    <h1>Tem algo que eu deva saber?</h1><p class="sub">Pra deixar as sugestões do seu jeito.</p>
-    ${Object.entries(PREFS).map(([g,arr])=>`<div class="group"><p class="glabel">${g}</p><div class="chips">${arr.map(p=>`<button class="chip ${o.prefs.includes(p)?"on":""}" data-pref="${esc(p)}" aria-pressed="${o.prefs.includes(p)}">${p}</button>`).join("")}</div></div>`).join("")}
-    <button class="cta" style="margin-top:auto" data-act="next">${o.prefs.length?"Continuar":"Pular por agora"}</button></div>`;
-  if(st===3) return `<div class="screen">${top}<div class="hero" style="min-height:130px">${mascot(120)}</div>
-    <h1>Qual vai ser a sua primeira lista?</h1>
-    <div class="pills">${Object.entries(TEMPLATES).map(([n,t])=>`<button class="pill c-${t.color} ${o.first===n&&!o.custom?"sel":""}" data-first="${n}">${n}<span class="em">${t.em}</span></button>`).join("")}
-    <div class="adder"><input id="ob-custom" class="pillin" placeholder="Outra… ex.: Escritório" value="${esc(o.custom)}" maxlength="40" enterkeyhint="go"><button class="round" data-act="ob-custom-go" aria-label="Usar esse nome">›</button></div></div>
-    <p class="hint" style="text-align:center;margin:0">Toque em uma lista para seguir.</p></div>`;
-  return `<div class="screen">${top}<div class="hero" style="min-height:120px">${mascot(110)}</div>
-    <h1>Como eu falo com você?</h1>
-    <label class="field">Seu nome (opcional)<input id="ob-name" value="${esc(o.name)}" placeholder="Como te chamo?" maxlength="30" autocomplete="given-name"></label>
-    <div class="pills">${Object.entries(TONES).map(([k,t],i)=>`<button class="pill c-${["sky","peach","lilac"][i]} ${o.tone===k?"sel":""}" data-tone="${k}"><span>${t.label}<small>${t.d}</small></span></button>`).join("")}</div>
-    <p class="hint" style="text-align:center;margin:0">Toque no jeito que prefere e sua lista fica pronta.</p></div>`;
+    <p class="sub">Eu organizo suas compras do mercado. Só duas coisas para começar:</p>
+    <label class="field">Seu nome<input id="ob-name" value="${esc(o.name)}" placeholder="Como te chamo?" maxlength="30" autocomplete="given-name"></label>
+    <div class="field">Quantas pessoas moram na casa?<div class="stepper"><button data-act="ob-minus" aria-label="Menos uma pessoa">−</button><output id="ob-n">${o.people}</output><button data-act="ob-plus" aria-label="Mais uma pessoa">+</button></div></div>
+    <button class="cta alt" data-act="finish">Começar</button>
+    <button class="link" data-act="have" style="align-self:center">Já usei antes? Restaurar backup</button></div>`;
 }
 
-function tabs(cur){return `<nav class="tabbar">${[["home","🗒️","Listas"],["insights","📈","Preços"],["settings","⚙️","Ajustes"]].map(([k,i,l])=>`<button class="tab ${cur===k?"on":""}" data-go="${k}"><span>${i}</span>${l}</button>`).join("")}</nav>`}
+function tabs(cur,fab){return `<nav class="tabbar">${fab?`<div class="fab">${fab}</div>`:""}${[["home","🗒️","Listas"],["insights","📊","Gastos"],["settings","⚙️","Ajustes"]].map(([k,i,l])=>`<button class="tab ${cur===k?"on":""}" data-go="${k}"><span>${i}</span>${l}</button>`).join("")}</nav>`}
 
 function listStats(l){const tot=l.items.length,d=l.items.filter(i=>i.done).length,v=l.items.reduce((s,i)=>s+(i.price||0)*i.qty,0);return{tot,d,v}}
 
+const STAGE_TXT={montar:"Montando",mercado:"No mercado",cupom:"Falta o cupom"};
+const listStage=l=>l.closed?"done":(l.stage||(l.items.some(i=>i.done)?"mercado":"montar"));
+const doneTotal=l=>l.items.filter(i=>i.done).reduce((a,i)=>a+(i.price||0)*i.qty,0);
 function renderHome(){
-  return `<div class="screen"><div class="topbar"><h2>Minhas listas</h2><span class="tag">v${VERSION}</span></div>
-    <div class="greet">${mascot(64)}<div class="bubble">${esc(tone().hi(S.name))}</div></div>
-    ${showInstall()&&!installSnoozed()?installCard():""}
-    <button class="promo c-mint" data-act="pick"><span class="em">🛒</span><span class="t"><b>Nova lista de compras</b>Escolha na sua relação o que vai comprar. A lista já sai com a data de hoje.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
-    <button class="promo c-sun" data-act="month"><span class="em">📅</span><span class="t"><b>Lista padrão do mês</b>Compra base de 30 dias, separada por setor do mercado e ajustada à sua casa.</span><span aria-hidden="true" style="font-size:22px">›</span></button>
-    <div class="pills">${S.lists.map(l=>{const s=listStats(l);return `<button class="pill c-${l.color}" data-open="${l.id}"><span>${esc(l.name)}<small>${l.date?fmtD(l.date)+" · ":""}${l.closed?"✓ concluída · ":""}${s.d}/${s.tot} itens${s.v?" · "+brl(s.v):""}</small></span><span class="em">${l.em}</span></button>`}).join("")}
-    <button class="add-list" data-act="new-list">+ Nova lista</button></div>
-    ${tabs("home")}</div>`;
+  const open=S.lists.filter(l=>!l.closed),done=S.lists.filter(l=>l.closed).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const openCard=l=>{const s=listStats(l);return `<button class="pill c-${l.color}" data-open="${l.id}"><span>${esc(l.name)}<small>${l.date?fmtD(l.date)+" · ":""}${STAGE_TXT[listStage(l)]} · ${s.d}/${s.tot} itens</small></span><span class="em">${l.em}</span></button>`};
+  const doneRow=l=>{const t=l.total||doneTotal(l);return `<button class="hrow" data-open="${l.id}"><span><b>${esc(l.name)}</b><small>${l.date?fmtD(l.date)+" · ":""}${l.items.filter(i=>i.done).length} itens</small></span><span class="htot">${t?brl(t):"—"}</span></button>`};
+  return `<div class="screen"><div class="topbar"><h2>${S.name?`Oi, ${esc(S.name)}!`:"Minhas listas"}</h2><span class="tag">v${VERSION}</span></div>
+    ${open.length?`<p class="sec">Listas abertas</p><div class="pills">${open.map(openCard).join("")}</div>`
+      :`<div class="empty">${mascot(90)}<p>${esc(tone().hi(S.name))}<br>Toque em <b>+ Nova lista</b> para começar.</p></div>`}
+    ${done.length?`<p class="sec">Compras concluídas</p><div class="hist">${done.map(doneRow).join("")}</div>`:""}
+    ${tabs("home",`<button class="cta alt" data-act="pick">+ Nova lista</button>`)}</div>`;
 }
 
 function renderList(){
   const l=S.lists.find(x=>x.id===ui.listId);if(!l){ui.screen="home";return renderHome()}
-  const s=listStats(l),pend=l.items.filter(i=>!i.done),done=l.items.filter(i=>i.done);
+  const s=listStats(l),pend=l.items.filter(i=>!i.done),done=l.items.filter(i=>i.done),stage=listStage(l);
+  const plan=getPlan(),hasCat=l.items.some(i=>i.cat),order=[...new Set([...plan.map(c=>c.name),...l.items.map(i=>i.cat||"Outros")])];
+  const budgetOf=c=>{const p=plan.find(x=>x.name===c);return l.month&&S.budget&&p?S.budget*(+p.pct||0)/100:0};
+  const grouped=(arr,row)=>hasCat?order.map(c=>{const g=arr.filter(i=>(i.cat||"Outros")===c);if(!g.length)return "";
+    const sp=l.items.filter(i=>(i.cat||"Outros")===c).reduce((a,i)=>a+(i.price||0)*i.qty,0),bd=budgetOf(c),em=(plan.find(x=>x.name===c)||{}).em||"";
+    return `<p class="sec">${em} ${esc(c)} · ${g.length}${bd?` <span class="${sp>bd?"over":""}">· ${brl(sp)} de ${brl(bd)}</span>`:""}</p><ul class="items">${g.map(row).join("")}</ul>`}).join("")
+    :`<ul class="items">${arr.map(row).join("")}</ul>`;
+  const q=i=>`${String(i.qty).replace(".",",")} ${esc(i.unit||"un")}`;
+  const rowEdit=i=>`<li class="item"><button class="ibody" data-edit="${i.id}"><div class="iname">${esc(i.name)}</div><div class="isub">${q(i)}${i.size?` · ${i.size}${i.sizeUnit||""}`:""}${blocked(i.name)?" · ⚠️ confere suas preferências":""}</div></button>
+    <button class="iprice ${i.price?"":"empty"}" data-edit="${i.id}">${i.price?brl(i.price*i.qty):"+ preço"}</button></li>`;
+  const rowShop=i=>`<li class="item big ${i.done?"done":""}"><button class="mrow" data-toggle="${i.id}" aria-pressed="${!!i.done}"><span class="check">${i.done?"✓":""}</span><span class="ibody"><span class="iname">${esc(i.name)}</span><span class="isub">${q(i)}</span></span></button></li>`;
   const names=new Set(l.items.map(i=>i.name.toLowerCase()));
   const sugg=[...new Set([...(TEMPLATES[l.name]?.items||[]),...S.prefs.flatMap(p=>PREF_SUGG[p]||[])])].filter(n=>!names.has(n.toLowerCase())&&!blocked(n)).slice(0,10);
-  const row=i=>`<li class="item ${i.done?"done":""}"><button class="check" data-toggle="${i.id}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?"✓":""}</button>
-    <button class="ibody" data-edit="${i.id}"><div class="iname">${esc(i.name)}</div><div class="isub">${i.qty} ${i.unit}${i.size?` · ${i.size}${i.sizeUnit||""}`:""}${blocked(i.name)?" · ⚠️ confere suas preferências":""}</div></button>
-    <button class="iprice ${i.price?"":"empty"}" data-edit="${i.id}">${i.price?brl(i.price*i.qty):"+ preço"}</button></li>`;
-  const hasCat=l.items.some(i=>i.cat);
-  const plan=getPlan(),order=[...new Set([...plan.map(c=>c.name),...l.items.map(i=>i.cat||"Outros")])];
-  const budgetOf=c=>{const p=plan.find(x=>x.name===c);return l.month&&S.budget&&p?S.budget*(+p.pct||0)/100:0};
-  const pendHtml=hasCat?order.map(c=>{const g=pend.filter(i=>(i.cat||"Outros")===c);if(!g.length)return "";
-    const sp=l.items.filter(i=>(i.cat||"Outros")===c).reduce((a,i)=>a+(i.price||0)*i.qty,0),bd=budgetOf(c),em=(plan.find(x=>x.name===c)||{}).em||"";
-    return `<p class="sec">${em} ${esc(c)} · ${g.length}${bd?` <span class="${sp>bd?"over":""}">· ${brl(sp)} de ${brl(bd)}</span>`:""}</p><ul class="items">${g.map(row).join("")}</ul>`}).join(""):`<ul class="items">${pend.map(row).join("")}</ul>`;
-  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><button class="link" data-act="list-opts">Editar lista</button></div>
-    <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2>${l.date?`<div class="ldate">📅 ${fmtLong(l.date)}${l.closed?" · ✓ concluída":""}</div>`:""}<div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
-      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}${s.v?`<span class="est">Estimativa com os últimos preços que você salvou.</span>`:""}</div>
-    <div class="adder"><textarea id="add-txt" placeholder="Digite ou cole uma receita…" aria-label="Adicionar itens"></textarea>
+  const idx={montar:0,mercado:1,cupom:2,done:3},dt=doneTotal(l);
+  const head=`<div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><span class="row" style="gap:2px"><button class="iconbtn" data-act="share-list" aria-label="Enviar lista">📤</button><button class="iconbtn" data-act="list-opts" aria-label="Editar nome e cor da lista">✏️</button></span></div>
+    <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2>${l.date?`<div class="ldate">📅 ${fmtLong(l.date)}</div>`:""}<div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
+      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}</div>`;
+  const steps=stage==="done"?"":`<div class="steps3" role="tablist">${[["montar","Montar"],["mercado","No mercado"],["cupom","Cupom"]].map(([k,t],i)=>`<button class="st ${k===stage?"on":""} ${i<idx[stage]?"past":""}" data-stage="${k}" aria-current="${k===stage?"step":"false"}"><b>${i<idx[stage]?"✓":i+1}</b>${t}</button>`).join("")}</div>`;
+  let body="";
+  if(stage==="montar") body=`<div class="adder"><textarea id="add-txt" placeholder="Adicionar item… ex.: 2 leite, pão" aria-label="Adicionar itens"></textarea>
       <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
-    <p class="hint">Dica: "2 leite, pão, café x3" vira 3 itens de uma vez.</p>
-    <div class="actions"><button class="btn" data-act="share-list">📤 Enviar lista</button><button class="btn" data-act="cupom">📷 Ler cupom fiscal</button>${hasCat?"":`<button class="btn" data-act="month">📅 Lista padrão do mês</button>`}</div>
     ${sugg.length?`<div><p class="sec">Sugestões do Moranguito</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
-    ${l.items.length?`${pendHtml}${done.length?`<p class="sec">No carrinho</p><ul class="items">${done.map(row).join("")}</ul>`:""}`
-      :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Adiciona aí em cima ou toca numa sugestão.</p></div>`}
-    ${l.date&&done.length&&!l.cupomSaved?`<button class="promo c-lilac" data-act="cupom"><span class="em">🧾</span><span class="t"><b>Já passou no caixa?</b>Tire a foto do cupom fiscal para salvar os preços desta compra.</span><span aria-hidden="true" style="font-size:22px">›</span></button>`:""}
-    ${done.length&&!l.closed?`<button class="cta alt" data-act="checkout">${l.date?"Concluir compra":"Finalizar compra"} · ${brl(done.reduce((a,i)=>a+(i.price||0)*i.qty,0))}</button>`:""}
-    ${tabs("home")}</div>`;
+    ${l.items.length?`<p class="hint" style="margin:0">Toque num item para mudar quantidade, preço ou remover.</p>${grouped(l.items,rowEdit)}<button class="cta alt" data-stage="mercado">Ir para o mercado →</button>`
+      :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Escreva ou fale os itens aqui em cima.</p></div>`}`;
+  else if(stage==="mercado") body=`<p class="hint" style="margin:0">Toque no item quando colocar no carrinho.</p>
+    ${pend.length?grouped(pend,rowShop):`<div class="donebox"><b>Tudo no carrinho! 🎉</b>Agora é só passar no caixa.</div>`}
+    ${done.length?`<p class="sec">No carrinho · ${done.length}</p><ul class="items">${done.map(rowShop).join("")}</ul>`:""}
+    <button class="cta alt" data-stage="cupom">Passei no caixa →</button>`;
+  else if(stage==="cupom") body=`${l.cupomSaved?`<div class="donebox"><b>✓ Preços do cupom salvos</b>${l.cupomTotal?`Total do cupom: ${brl(l.cupomTotal)}`:""}</div>`
+      :`<button class="promo c-lilac" data-act="cupom"><span class="em">📷</span><span class="t"><b>Fotografar o cupom fiscal</b>Eu salvo os preços, acerto as quantidades e marco o que faltou.</span><span aria-hidden="true" style="font-size:22px">›</span></button>`}
+    ${done.length?`<p class="sec">Comprados · ${done.length}</p><ul class="items">${done.map(rowEdit).join("")}</ul>`:`<p class="hint" style="margin:0">Nenhum item marcado no carrinho ainda.</p>`}
+    <button class="cta ${l.cupomSaved?"alt":""}" data-act="checkout">Concluir compra${(l.cupomTotal||dt)?` · ${brl(l.cupomTotal||dt)}`:""}</button>
+    ${l.cupomSaved?"":`<p class="hint" style="text-align:center;margin:0">Sem cupom? Pode concluir mesmo assim.</p>`}`;
+  else body=`<div class="donebox"><b>✓ Compra concluída</b>${l.date?esc(fmtLong(l.date)):""}${(l.total||dt)?` · ${brl(l.total||dt)}`:""}</div>
+    <div class="actions"><button class="btn dark" data-act="reuse">🔁 Usar de novo hoje</button><button class="btn" data-act="reopen">Reabrir</button></div>
+    ${l.items.length?grouped(l.items,rowEdit):""}`;
+  return `<div class="screen">${head}${steps}${body}${tabs("home")}</div>`;
 }
 
 /* ---------- Insights ---------- */
 function monthKey(d){return d.slice(0,7)}
 function renderInsights(){
   const H=S.history,P=S.purchases;
-  if(!H.length) return `<div class="screen"><div class="topbar"><h2>Quanto sua cesta subiu</h2></div>
-    <div class="empty">${mascot(110,"think")}<p>Quando você finalizar uma compra com preços, eu mostro aqui a variação de cada produto, o gasto do mês e quando a embalagem encolheu.</p>
-    <button class="cta alt" data-act="cupom">📷 Ler cupom fiscal</button><button class="cta" data-act="sample">Ver com dados de exemplo</button></div>${tabs("insights")}</div>`;
+  if(!H.length) return `<div class="screen"><div class="topbar"><h2>Gastos</h2></div>
+    <div class="empty">${mascot(110,"think")}<p>Quando você concluir uma compra com o cupom fiscal, eu mostro aqui quanto gastou no mês, quanto cada produto subiu e quando a embalagem encolheu.</p>
+    <button class="cta" data-act="sample">Ver com dados de exemplo</button></div>${tabs("insights")}</div>`;
   const now=new Date(),months=[];for(let k=5;k>=0;k--){const d=new Date(now.getFullYear(),now.getMonth()-k,1);months.push(d.toISOString().slice(0,7))}
   const byM=Object.fromEntries(months.map(m=>[m,0]));P.forEach(p=>{const m=monthKey(p.date);if(m in byM)byM[m]+=p.total});
   const max=Math.max(1,...Object.values(byM)),cur=byM[months[5]],prev=byM[months[4]];
@@ -439,34 +458,34 @@ function renderInsights(){
     const pts=v.map((x,i)=>`${(i/(v.length-1)*100).toFixed(1)},${(36-(x-lo)/r*32).toFixed(1)}`).join(" ");
     return `<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="var(--tomato)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`};
   const d=p=>{const c=Math.abs(p)<0.5?"eq":p>0?"up":"down";return `<span class="delta ${c}">${c==="eq"?"=":(p>0?"▲ ":"▼ ")+Math.abs(p).toFixed(1).replace(".",",")+"%"}</span>`};
-  return `<div class="screen"><div class="topbar"><h2>Quanto sua cesta subiu</h2>${S.sample?`<span class="tag">exemplo</span>`:""}</div>
-    <button class="btn dark" data-act="cupom" style="align-self:flex-start">📷 Ler cupom fiscal</button>
+  return `<div class="screen"><div class="topbar"><h2>Gastos</h2>${S.sample?`<span class="tag">exemplo</span>`:""}</div>
     <div class="kpi"><span style="font-weight:600">Gasto em ${mn(months[5])}</span><span class="big">${brl(cur)}</span>
       <span>${prev?`${cur>=prev?"▲":"▼"} ${brl(Math.abs(cur-prev))} vs ${mn(months[4])}`:"Primeiro mês registrado"}</span></div>
     <div class="card"><p class="glabel">Para onde foi o dinheiro · 6 meses</p>
       <div class="bars">${months.map((m,i)=>`<div class="${i===5?"cur":""}"><span>${byM[m]?Math.round(byM[m]):""}</span><b style="height:${byM[m]/max*100}%"></b>${mn(m)}</div>`).join("")}</div></div>
     ${shr.map(p=>`<div class="alert"><b>📦 ${esc(p.name)} encolheu.</b> Passou de ${p.shrink.f.size}${p.shrink.f.sizeUnit} para ${p.shrink.l.size}${p.shrink.l.sizeUnit} e o preço não baixou (${brl(p.shrink.f.price)} → ${brl(p.shrink.l.price)}).</div>`).join("")}
-    <div class="card"><p class="glabel">Variação por produto · preço por unidade de medida</p>
+    <div class="card"><p class="glabel">Quanto cada produto subiu · preço por medida</p>
       ${prods.map(p=>`<div><div class="prow"><div><div class="iname">${esc(p.name)}</div><div class="isub">${p.g.length} compras · último ${brl(p.last)}</div></div>${d(p.pct)}</div>${spark(p.g)}</div>`).join("")}</div>
     ${S.sample?`<button class="link" data-act="clear-sample">Remover dados de exemplo</button>`:""}
     ${tabs("insights")}</div>`;
 }
 
 function renderSettings(){
+  const card=(t,b)=>`<div class="card"><p class="glabel">${t}</p>${b}</div>`,mut=t=>`<p style="margin:0;color:var(--muted);line-height:1.45">${t}</p>`;
   return `<div class="screen"><div class="topbar"><h2>Ajustes</h2></div>
-    <div class="card"><p class="glabel">Tema</p><div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div></div>
-    <div class="card"><p class="glabel">Tom do Moranguito</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div></div>
-    <div class="card"><p class="glabel">Preferências</p>${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}</div>
-    <div class="card"><p class="glabel">Divisão das compras do mês</p><p style="margin:0;color:var(--muted);line-height:1.45">${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. Mude as sugestões e a parte do orçamento de cada uma.</p><button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar divisão</button></div>
-    <div class="card"><p class="glabel">App no celular</p>${isStandalone()?`<p style="margin:0">✓ Você já está usando o app instalado.</p>`:`<p style="margin:0;color:var(--muted);line-height:1.45">Instale para abrir direto da tela inicial, como um app, e usar sem internet.</p><button class="btn dark" data-act="install" style="align-self:flex-start">📲 Instalar no celular</button>`}</div>
-    <div class="card"><p class="glabel">Backup dos seus dados</p><p style="margin:0;color:var(--muted);line-height:1.45">Guarde uma cópia das suas listas, preços e preferências. Serve para trocar de celular ou passar do navegador para o app instalado.</p>
+    ${card("Você",`<label class="field">Seu nome<input id="st-name" value="${esc(S.name)}" placeholder="Como te chamo?" maxlength="30"></label>
+      <div class="field">Pessoas na casa<div class="stepper" style="justify-content:flex-start"><button data-act="st-minus" aria-label="Menos uma pessoa">−</button><output id="st-n">${S.people||defaultPeople()}</output><button data-act="st-plus" aria-label="Mais uma pessoa">+</button></div></div>`)}
+    ${card("Meus itens e categorias",`${mut(`${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. São os itens que aparecem na Nova lista.`)}<button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar itens e categorias</button>`)}
+    ${card("Aparência",`<div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div>
+      <p class="glabel" style="margin-top:6px">Jeito do Moranguito falar</p><div class="chips">${Object.entries(TONES).map(([k,t])=>`<button class="chip ${S.tone===k?"on":""}" data-set-tone="${k}">${t.label}</button>`).join("")}</div>`)}
+    ${card("Preferências da casa",`${mut("Ajustam as sugestões e a compra do mês.")}${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}`)}
+    ${card("Backup",`${mut("Guarde uma cópia das suas listas e preços para trocar de celular ou passar do navegador para o app instalado.")}
       <div class="actions"><button class="btn dark" data-act="backup">Copiar backup</button><button class="btn" data-act="restore">Restaurar backup</button></div>
-      ${S.lastBackup?`<span class="isub">Último backup: ${new Date(S.lastBackup).toLocaleDateString("pt-BR")}</span>`:""}</div>
-    <div class="card"><p class="glabel">Seus dados são seus</p><p style="margin:0;color:var(--muted);line-height:1.45">Tudo fica salvo só neste aparelho. Nada vai pra servidor nenhum.</p>
-      <button class="danger" data-act="reset" style="align-self:flex-start;padding-left:0">Apagar todos os meus dados</button></div>
-    <div class="card"><p class="glabel">Desenvolvido por</p>
-      <div class="dev"><img src="icons/domdevlabs-logo.png" alt="Logo DomDevLabs" onerror="this.onerror=null;this.src=DDL_FALLBACK"><div><b style="font-size:19px">DomDevLabs</b><div class="isub">Compras Mercado v${VERSION}</div></div></div>
-      <div class="mail"><span>Contato:</span><code id="dev-mail">${DEV_EMAIL}</code><button class="btn" data-act="copy-mail">Copiar</button></div></div>
+      ${S.lastBackup?`<span class="isub">Último backup: ${new Date(S.lastBackup).toLocaleDateString("pt-BR")}</span>`:""}`)}
+    ${isStandalone()?"":card("Instalar no celular",`${mut("Abre direto da tela inicial, como um app, e funciona sem internet.")}<button class="btn dark" data-act="install" style="align-self:flex-start">📲 Instalar</button>`)}
+    ${card("Sobre",`<div class="dev"><img src="icons/domdevlabs-logo.png" alt="Logo DomDevLabs" onerror="this.onerror=null;this.src=DDL_FALLBACK"><div><b style="font-size:19px">DomDevLabs</b><div class="isub">Compras Mercado v${VERSION}</div></div></div>
+      <div class="mail"><span>Contato:</span><code id="dev-mail">${DEV_EMAIL}</code><button class="btn" data-act="copy-mail">Copiar</button></div>
+      ${mut("Seus dados ficam só neste aparelho.")}<button class="danger" data-act="reset" style="align-self:flex-start;padding-left:0">Apagar todos os meus dados</button>`)}
     ${tabs("settings")}</div>`;
 }
 
@@ -513,23 +532,25 @@ function listForm(l){
 
 /* ---------- Ações ---------- */
 function finishOnb(){
-  const o=ui.ob;S.theme=o.theme;S.prefs=o.prefs;S.tone=o.tone;S.name=o.name.trim();S.onboarded=true;delete S.obDraft;
-  const name=o.custom.trim()||o.first,t=TEMPLATES[name];
-  const l={id:uid(),name,color:t?.color||"sky",em:t?.em||"🧺",items:[]};
-  if(name==="Mercado do mês"){l.items=monthItems(defaultPeople());l.month=true}
-  else (t?.items||[]).filter(n=>!blocked(n)).slice(0,4).forEach(n=>l.items.push({id:uid(),name:n,qty:1,price:lastPrice(n),size:null,unit:"un",done:false}));
-  S.lists.push(l);save();applyTheme(S.theme);ui.listId=l.id;ui.screen="list";render();toast(tone().add);
+  const o=ui.ob;S.name=(($("#ob-name")?.value)??o.name??"").trim();S.people=o.people||2;S.onboarded=true;delete S.obDraft;if(!S.theme)S.theme="system";
+  save();applyTheme(S.theme);ui.screen="home";render();scrollTo(0,0);
 }
 function checkout(l){
   const done=l.items.filter(i=>i.done),date=l.date||todayISO();
   const total=done.reduce((a,i)=>a+(i.price||0)*i.qty,0);
   if(!l.cupomSaved){done.filter(i=>i.price).forEach(i=>S.history.push({name:i.name,price:i.price,size:i.size,sizeUnit:i.sizeUnit,date,list:l.name}));
     if(total)S.purchases.push({date,total,list:l.name});}
-  // mantém os itens na lista para a próxima compra, desmarcados e com o último preço
-  if(l.date){l.closed=true;ui.screen="home"}else done.forEach(i=>i.done=false);
+  l.closed=true;l.date=date;l.total=l.cupomTotal||total;l.stage="done";
   if(S.sample){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false}
-  save();render();toast(tone().done+(total?" "+brl(total):""));
+  save();ui.screen="home";render();scrollTo(0,0);toast(tone().done+(l.total?" "+brl(l.total):""));
 }
+function reuseList(l){
+  const t=todayISO(),auto=/^Mercado · \d{2}\/\d{2}$/.test(l.name);
+  const nl={id:uid(),name:auto?defName(t):l.name,date:t,color:l.color,em:l.em,month:l.month,stage:"montar",
+    items:l.items.map(i=>({...i,id:uid(),done:false,price:lastPrice(i.name)??i.price}))};
+  S.lists.unshift(nl);save();ui.listId=nl.id;ui.screen="list";render();scrollTo(0,0);toast(`Nova lista de hoje com ${nl.items.length} itens.`);
+}
+
 function loadSample(){
   const now=new Date(),dt=k=>{const d=new Date(now.getFullYear(),now.getMonth()-k,12);return d.toISOString().slice(0,10)};
   const prod=[["Café 500g",[17.9,18.9,19.9,22.5,24.9,26.4],[500,500,500,500,450,450],"g"],["Arroz 5kg",[27.9,27.5,26.9,26.9,25.9,25.4],[5,5,5,5,5,5],"kg"],
@@ -577,7 +598,7 @@ function bind(){
     else if(a==="plan-open"){ui.planFrom=b.dataset.from||"settings";ui.screen="plan";render();scrollTo(0,0)}
     else if(a==="backup")backupSheet();
     else if(a==="restore")restoreSheet(false);
-    else if(a==="pick"){ui.pick={date:todayISO(),name:"",sel:{},extra:[]};ui.screen="pick";render();scrollTo(0,0)}
+    else if(a==="pick"){ui.pick={date:todayISO(),name:"",sel:{},qty:{},extra:[],month:false};ui.screen="pick";render();scrollTo(0,0)}
     else if(a==="pick-go")createPicked();
     else if(a==="plan-reset"){if(b.dataset.armed){S.plan=null;save();render();toast("Divisão padrão restaurada.")}else{b.dataset.armed=1;b.textContent="Confirmar?"}}
     else if(a==="plan-newcat"){const P=getPlan();P.push({em:"🛍️",name:"Nova categoria",pct:0,items:[]});S.plan=P;save();render();A.querySelector(`.pcat[data-ci="${P.length-1}"] .pname`)?.select()}
@@ -586,6 +607,11 @@ function bind(){
     else if(a==="install")doInstall();
     else if(a==="install-later"){S.installSnooze=Date.now();save();render()}
     else if(a==="clear-sample"){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false;save();render()}
+    else if(a==="ob-minus"||a==="ob-plus"){ui.ob.people=Math.max(1,Math.min(12,(ui.ob.people||2)+(a==="ob-plus"?1:-1)));$("#ob-n").textContent=ui.ob.people;ui.ob.name=$("#ob-name")?.value||ui.ob.name}
+    else if(a==="st-minus"||a==="st-plus"){S.people=Math.max(1,Math.min(12,(S.people||defaultPeople())+(a==="st-plus"?1:-1)));$("#st-n").textContent=S.people;save()}
+    else if(a==="reopen"){l.closed=false;l.stage="mercado";save();render();scrollTo(0,0)}
+    else if(a==="reuse")reuseList(l);
+    else if(a==="pick-month")pickMonth();
     else if(a==="reset"){if(b.dataset.armed){S=blank();save();ui={...ui,screen:"onb",step:0};applyTheme(ui.ob.theme);render()}else{b.dataset.armed=1;b.textContent="Toque de novo pra confirmar"}}
   });
   const go=(el,fn)=>{A.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel"));el.classList.add("sel");setTimeout(fn,180)};
@@ -603,6 +629,8 @@ function bind(){
   A.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{const it=l.items.find(i=>i.id===b.dataset.toggle);it.done=!it.done;save();render()});
   A.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editItem(l,l.items.find(i=>i.id===b.dataset.edit)));
   A.querySelectorAll("[data-sugg]").forEach(b=>b.onclick=()=>{l.items.unshift({id:uid(),name:b.dataset.sugg,qty:1,price:null,size:null,unit:"un",done:false});save();render()});
+  A.querySelectorAll("[data-stage]").forEach(b=>b.onclick=()=>{l.stage=b.dataset.stage;save();render();scrollTo(0,0)});
+  const sn=$("#st-name");if(sn)sn.onchange=()=>{S.name=sn.value.trim();save()};
   const ta=$("#add-txt");if(ta)ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addText()}};
   A.querySelectorAll("[data-set-theme]").forEach(b=>b.onclick=()=>{S.theme=b.dataset.setTheme;applyTheme(S.theme);save();render()});
   A.querySelectorAll("[data-set-tone]").forEach(b=>b.onclick=()=>{S.tone=b.dataset.setTone;save();render()});
@@ -676,8 +704,8 @@ function renderPick(){
     <div class="grid2"><label class="field">Data da compra<input id="pk-date" type="date" value="${pk.date}"></label>
       <label class="field">Nome (opcional)<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>
     <input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar na relação" aria-label="Buscar item na relação">
-    <button class="btn" data-act="plan-open" data-from="pick" style="align-self:flex-start;min-height:38px;padding:0 14px;font-size:14px">🗂️ Editar divisão</button>
-    <p class="hint" style="margin:0">Toque no que vai comprar. Quantidade e preço você ajusta depois, na lista.</p>
+    <button class="btn ${pk.month?"":"dark"}" data-act="pick-month">${pk.month?"✕ Desmarcar a compra do mês":`📅 Marcar a compra do mês inteira (${S.people||defaultPeople()} ${(S.people||defaultPeople())>1?"pessoas":"pessoa"})`}</button>
+    <p class="hint" style="margin:0">Ou toque só no que vai comprar hoje. Quantidade e preço você ajusta depois, na lista.</p>
     <div class="adder"><input id="pk-new" class="padd" placeholder="Não achou? Inclua outro item" aria-label="Incluir outro item"><button class="btn" id="pk-add">Incluir</button></div>
     ${cats.map(c=>{const em=(plan.find(x=>x.name===c)||{}).em||(c.startsWith("Já")?"🕘":"🛍️"),its=R.filter(i=>i.cat===c);
       const inPlan=plan.some(x=>x.name===c),ed=inPlan&&pk.edit===c;
@@ -686,12 +714,13 @@ function renderPick(){
       <div class="adder"><input class="padd" id="pk-in" placeholder="Novo item (ex.: Morango)" aria-label="Novo item em ${esc(c)}"><button class="btn dark" data-pkin>Incluir</button></div>
       <p class="isub" style="margin:0">Toque no ✕ para excluir. O que você mudar aqui fica salvo na sua relação.</p>`
       :`<div class="chips">${its.map(i=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`}).join("")}${inPlan?`<button class="chip pkplus" data-pkedit="${esc(c)}" data-pkopen="1">+ Novo item</button>`:""}</div>`}</div>`}).join("")}
+    <button class="btn" data-act="plan-open" data-from="pick" style="align-self:center;min-height:38px;padding:0 14px;font-size:14px">🗂️ Editar itens e categorias</button>
     <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n?"":"disabled"}>${n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"}</button></div></div>`;
 }
 function bindPick(A){
   const pk=ui.pick;
   const upd=()=>{const n=Object.keys(pk.sel).length,b=A.querySelector("[data-act=pick-go]");b.disabled=!n;b.textContent=n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"};
-  const set=(c,on)=>{if(on)pk.sel[c.dataset.k]=c.dataset.u||"un";else delete pk.sel[c.dataset.k];c.classList.toggle("on",on);c.setAttribute("aria-pressed",on)};
+  const set=(c,on)=>{if(on)pk.sel[c.dataset.k]=c.dataset.u||"un";else{delete pk.sel[c.dataset.k];if(pk.qty)delete pk.qty[c.dataset.k]}c.classList.toggle("on",on);c.setAttribute("aria-pressed",on)};
   A.querySelectorAll(".chip.pk").forEach(c=>c.onclick=()=>{set(c,!pk.sel[c.dataset.k]);upd()});
   A.querySelectorAll("[data-pkall]").forEach(b=>b.onclick=()=>{const cs=[...b.closest(".pkg").querySelectorAll(".chip.pk")].filter(c=>!c.hidden),all=cs.every(c=>pk.sel[c.dataset.k]);
     cs.forEach(c=>set(c,!all));b.textContent=all?"Marcar todos":"Desmarcar todos";upd()});
@@ -717,19 +746,26 @@ function bindPick(A){
   const pin=$("#pk-in");if(pin)pin.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addIn()}};
   A.querySelectorAll("[data-pkin]").forEach(b=>b.onclick=addIn);
 }
+function pickMonth(){
+  const pk=ui.pick,y=scrollY;
+  if(pk.month){pk.sel={};pk.qty={};pk.month=false;render();scrollTo(0,y);toast("Compra do mês desmarcada.");return}
+  const n=S.people||defaultPeople(),m=monthItems(n);
+  m.forEach(i=>{const k=i.cat+"|"+i.name;pk.sel[k]=i.unit||"un";pk.qty[k]=i.qty});pk.month=true;
+  render();scrollTo(0,y);toast(`${m.length} itens marcados para ${n} ${n>1?"pessoas":"pessoa"}. Tire o que não precisar.`);
+}
 function createPicked(){
   const pk=ui.pick;
-  const items=Object.entries(pk.sel).map(([k,u])=>{const i=k.indexOf("|"),cat=k.slice(0,i),name=k.slice(i+1);return{id:uid(),name,cat,unit:u||"un",qty:1,price:lastPrice(name),size:null,done:false}});
+  const items=Object.entries(pk.sel).map(([k,u])=>{const i=k.indexOf("|"),cat=k.slice(0,i),name=k.slice(i+1);return{id:uid(),name,cat,unit:u||"un",qty:pk.qty?.[k]||1,price:lastPrice(name),size:null,done:false}});
   if(!items.length)return;
-  const l={id:uid(),name:pk.name.trim()||defName(pk.date),date:pk.date,color:"sky",em:"🛒",items};
+  const l={id:uid(),name:pk.name.trim()||defName(pk.date),date:pk.date,color:pk.month?"mint":"sky",em:pk.month?"📅":"🛒",month:!!pk.month,stage:"montar",items};
   S.lists.unshift(l);ui.pick=null;save();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast(`Lista de ${fmtD(l.date)} criada com ${items.length} ${items.length>1?"itens":"item"}.`);
 }
 
 /* ---------- Tela: divisão do mês (editável) ---------- */
 function renderPlan(){
   const P=getPlan(),sum=P.reduce((a,c)=>a+(+c.pct||0),0),B=S.budget||0,ok=Math.round(sum)===100;
-  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="${ui.planFrom==="pick"&&ui.pick?"pick":"settings"}" aria-label="Voltar">‹</button><h2 style="font-size:22px">Divisão do mês</h2><button class="link" data-act="plan-reset">Restaurar</button></div>
-    <p style="margin:0;color:var(--muted);line-height:1.45">Essas categorias e sugestões montam a <b>Lista padrão do mês</b>. Mude nomes, tire ou inclua itens e ajuste a parte do orçamento de cada uma.</p>
+  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="${ui.planFrom==="pick"&&ui.pick?"pick":"settings"}" aria-label="Voltar">‹</button><h2 style="font-size:22px">Itens e categorias</h2><button class="link" data-act="plan-reset">Restaurar</button></div>
+    <p style="margin:0;color:var(--muted);line-height:1.45">Esses itens aparecem na <b>Nova lista</b> e na compra do mês. Mude nomes, tire ou inclua itens e ajuste a parte do orçamento de cada categoria.</p>
     <div class="card"><label class="field">Orçamento do mês (R$, opcional)<input id="p-budget" type="number" inputmode="decimal" min="0" step="10" value="${B||""}" placeholder="ex.: 1200"></label>
       <div class="pctbar" aria-hidden="true">${P.map((c,i)=>`<i style="flex:${+c.pct||0};background:var(--${COLORS[i%6]})"></i>`).join("")}</div>
       <div class="meta"><span>Soma das partes</span><span style="color:${ok?"var(--good)":"var(--bad)"}">${sum}%${ok?" ✓":" · o ideal é 100%"}</span></div>
@@ -741,7 +777,7 @@ function renderPlan(){
       <div class="adder"><input class="padd" placeholder="Adicionar item (ex.: Azeitona)" aria-label="Adicionar item em ${esc(c.name)}"><button class="btn" data-addi>Adicionar</button></div>
       <button class="danger" data-delcat style="align-self:flex-start;padding:4px 0">Apagar categoria</button></div>`).join("")}
     <button class="add-list" data-act="plan-newcat">+ Nova categoria</button>
-    ${ui.planFrom==="pick"&&ui.pick?`<button class="cta alt" data-go="pick">Voltar para a nova lista</button>`:`<button class="cta alt" data-act="month">Montar lista do mês com essa divisão</button>`}
+    ${ui.planFrom==="pick"&&ui.pick?`<button class="cta alt" data-go="pick">Voltar para a nova lista</button>`:`<button class="cta alt" data-go="settings">Pronto</button>`}
     ${tabs("settings")}</div>`;
 }
 function bindPlan(A){
@@ -760,7 +796,9 @@ function bindPlan(A){
 
 /* ---------- Preços: casar nomes ---------- */
 const norm=s=>String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-function matches(item,product){const w=norm(item).split(" ").filter(x=>x.length>=3&&!/^\d/.test(x));if(!w.length)return false;return (" "+norm(product)+" ").includes(" "+w[0])}
+// casa item da lista com produto do cupom: as 2 primeiras palavras do item precisam aparecer (aceita abreviação do cupom, ex.: "HIG" = higiênico)
+function matches(item,product){const w=norm(item).split(" ").filter(x=>x.length>=3&&!/^\d/.test(x)).slice(0,2);if(!w.length)return false;
+  const t=norm(product).split(" ").filter(Boolean);return w.every(x=>t.some(y=>y.startsWith(x)||(y.length>=3&&x.startsWith(y))))}
 function lastPrice(name){for(let i=S.history.length-1;i>=0;i--){const h=S.history[i];if(!h.sample&&(norm(h.name)===norm(name)||matches(name,h.name)))return h.price}return null}
 function sizeOf(name){const m=String(name).match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ml|lt|l)\b/i);if(!m)return null;let u=m[2].toLowerCase();if(u==="lt")u="L";if(u==="l")u="L";return{size:parseFloat(m[1].replace(",",".")),unit:u}}
 
@@ -854,6 +892,7 @@ function reviewCupom(r,raw,failed){
       if(tl)tl.cupomSaved=true;
       const sum=rows.reduce((a,x)=>a+x.price*x.qty,0);
       S.purchases.push({date,total:total>0?total:Math.round(sum*100)/100,store,list:"Cupom fiscal"});
+      if(tl)tl.cupomTotal=total>0?total:Math.round(sum*100)/100;
       save();close();render();toast(`${rows.length} preços salvos${mk?` · ${mk} ${mk>1?"itens marcados como comprados":"item marcado como comprado"}`:upd?` · ${upd} ${upd>1?"itens atualizados":"item atualizado"} nas listas`:""}`);
     };
   });
@@ -942,7 +981,7 @@ function bindShared(A){
   const leave=()=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}};
   A.querySelectorAll("[data-act=sh-close]").forEach(b=>b.addEventListener("click",()=>{leave();ui.screen="home";render()}));
   A.querySelectorAll("[data-act=sh-save]").forEach(b=>b.addEventListener("click",()=>{const d=ui.shared,st=shState();
-    const l={id:uid(),name:d.n||"Lista recebida",date:d.d||todayISO(),color:"sky",em:"🛒",items:d.i.map((x,j)=>({id:uid(),name:x[0],qty:x[1]||1,unit:x[2]||"un",cat:x[3]||"",price:lastPrice(x[0]),size:null,done:j in st?!!st[j]:!!x[4]}))};
+    const l={id:uid(),name:d.n||"Lista recebida",date:d.d||todayISO(),color:"sky",em:"🛒",stage:"mercado",items:d.i.map((x,j)=>({id:uid(),name:x[0],qty:x[1]||1,unit:x[2]||"un",cat:x[3]||"",price:lastPrice(x[0]),size:null,done:j in st?!!st[j]:!!x[4]}))};
     if(!S.onboarded){S.onboarded=true;S.theme="system";delete S.obDraft}
     S.lists.unshift(l);save();leave();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast("Lista salva no seu app.")}));
 }
