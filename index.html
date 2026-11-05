@@ -256,6 +256,27 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .donebox b{font-size:17px}
 .onb1 .stepper{justify-content:flex-start}
 .onb1 .field{color:var(--fg);font-size:15px}
+body{font-size:17px}
+.iname{font-size:17px}
+.pill.c-list{background:var(--surface);color:var(--fg)}
+.lhead.c-list{background:var(--surface);color:var(--fg)}
+.lhead.c-list .bar{background:var(--line)}
+.lhead.c-list .bar i{background:var(--tomato)}
+.pkg .pkbody{display:none;flex-direction:column;gap:10px;padding:8px 0 4px}
+.pkg.open .pkbody,.searching .pkg .pkbody{display:flex}
+.pkhead{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:54px;padding:0 4px;font-weight:700;font-size:17px;border-bottom:1px solid var(--line);text-align:left}
+.pkcount{display:flex;gap:10px;align-items:center;flex:none}
+.pkn{color:var(--good);font-weight:700;font-size:14px}
+.chev{color:var(--muted);font-size:24px;line-height:1;transition:transform .2s;display:inline-block}
+.pkg.open .chev,.searching .chev{transform:rotate(90deg)}
+.pkg.top .glabel{margin-bottom:8px}
+.pkmeta{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-weight:600;min-height:32px}
+.pksearch{display:flex;gap:8px}
+.pksearch .btn{flex:none;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tip{border-radius:18px;padding:12px 14px;background:color-mix(in srgb,var(--tomato) 14%,transparent);display:flex;gap:10px;align-items:center;line-height:1.4}
+.tip p{margin:0;flex:1;min-width:0}
+.tip .link{flex:none;color:var(--fg);padding:6px 4px}
+.lcount{font-weight:600}
 .credit{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--muted);font-size:13px;padding:8px}
 .credit svg{width:28px;height:28px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
@@ -270,7 +291,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "2.0.1";
+const VERSION = "2.1.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -383,11 +404,15 @@ function tabs(cur,fab){return `<nav class="tabbar">${fab?`<div class="fab">${fab
 function listStats(l){const tot=l.items.length,d=l.items.filter(i=>i.done).length,v=l.items.reduce((s,i)=>s+(i.price||0)*i.qty,0);return{tot,d,v}}
 
 const STAGE_TXT={montar:"Montando",mercado:"No mercado",cupom:"Falta o cupom"};
+const UNITS={un:["unidade","unidades"],pct:["pacote","pacotes"],dz:["dúzia","dúzias"],kg:["kg","kg"],cx:["caixa","caixas"],L:["litro","litros"],g:["g","g"],ml:["ml","ml"]};
+function fmtNum(q){q=+q||1;const w=Math.floor(q),f=Math.round((q-w)*100)/100,fr={0.5:"½",0.25:"¼",0.75:"¾"}[f];return fr?`${w||""}${fr}`:String(q).replace(".",",")}
+function fmtQty(q,u){u=u||"un";q=+q||1;if(q===1&&u!=="kg")return "";const n=UNITS[u]||[u,u];return `${fmtNum(q)} ${q>1?n[1]:n[0]}`}
+const tipBox=(k,t)=>S.tips?.[k]?"":`<div class="tip"><span aria-hidden="true">💡</span><p>${t}</p><button class="link" data-act="tip-ok" data-tip="${k}">Entendi</button></div>`;
 const listStage=l=>l.closed?"done":(l.stage||(l.items.some(i=>i.done)?"mercado":"montar"));
 const doneTotal=l=>l.items.filter(i=>i.done).reduce((a,i)=>a+(i.price||0)*i.qty,0);
 function renderHome(){
   const open=S.lists.filter(l=>!l.closed),done=S.lists.filter(l=>l.closed).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-  const openCard=l=>{const s=listStats(l);return `<button class="pill c-${l.color}" data-open="${l.id}"><span>${esc(l.name)}<small>${l.date?fmtD(l.date)+" · ":""}${STAGE_TXT[listStage(l)]} · ${s.d}/${s.tot} itens</small></span><span class="em">${l.em}</span></button>`};
+  const openCard=l=>{const s=listStats(l);return `<button class="pill c-list" data-open="${l.id}"><span>${esc(l.name)}<small>${l.date?fmtD(l.date)+" · ":""}${STAGE_TXT[listStage(l)]} · ${s.d}/${s.tot} itens</small></span><span class="em">${l.em}</span></button>`};
   const doneRow=l=>{const t=l.total||doneTotal(l);return `<button class="hrow" data-open="${l.id}"><span><b>${esc(l.name)}</b><small>${l.date?fmtD(l.date)+" · ":""}${l.items.filter(i=>i.done).length} itens</small></span><span class="htot">${t?brl(t):"—"}</span></button>`};
   return `<div class="screen"><div class="topbar"><h2>${S.name?`Oi, ${esc(S.name)}!`:"Minhas listas"}</h2><span class="tag">v${VERSION}</span></div>
     ${open.length?`<p class="sec">Listas abertas</p><div class="pills">${open.map(openCard).join("")}</div>`
@@ -400,40 +425,41 @@ function renderList(){
   const l=S.lists.find(x=>x.id===ui.listId);if(!l){ui.screen="home";return renderHome()}
   const s=listStats(l),pend=l.items.filter(i=>!i.done),done=l.items.filter(i=>i.done),stage=listStage(l);
   const plan=getPlan(),hasCat=l.items.some(i=>i.cat),order=[...new Set([...plan.map(c=>c.name),...l.items.map(i=>i.cat||"Outros")])];
-  const budgetOf=c=>{const p=plan.find(x=>x.name===c);return l.month&&S.budget&&p?S.budget*(+p.pct||0)/100:0};
+  const budgetOf=c=>{const p=plan.find(x=>x.name===c);return S.budgetOn&&l.month&&S.budget&&p?S.budget*(+p.pct||0)/100:0};
   const grouped=(arr,row)=>hasCat?order.map(c=>{const g=arr.filter(i=>(i.cat||"Outros")===c);if(!g.length)return "";
     const sp=l.items.filter(i=>(i.cat||"Outros")===c).reduce((a,i)=>a+(i.price||0)*i.qty,0),bd=budgetOf(c),em=(plan.find(x=>x.name===c)||{}).em||"";
     return `<p class="sec">${em} ${esc(c)} · ${g.length}${bd?` <span class="${sp>bd?"over":""}">· ${brl(sp)} de ${brl(bd)}</span>`:""}</p><ul class="items">${g.map(row).join("")}</ul>`}).join("")
     :`<ul class="items">${arr.map(row).join("")}</ul>`;
-  const q=i=>`${String(i.qty).replace(".",",")} ${esc(i.unit||"un")}`;
-  const rowEdit=i=>`<li class="item"><button class="ibody" data-edit="${i.id}"><div class="iname">${esc(i.name)}</div><div class="isub">${q(i)}${i.size?` · ${i.size}${i.sizeUnit||""}`:""}${blocked(i.name)?" · ⚠️ confere suas preferências":""}</div></button>
-    <button class="iprice ${i.price?"":"empty"}" data-edit="${i.id}">${i.price?brl(i.price*i.qty):"+ preço"}</button></li>`;
-  const rowShop=i=>`<li class="item big ${i.done?"done":""}"><button class="mrow" data-toggle="${i.id}" aria-pressed="${!!i.done}"><span class="check">${i.done?"✓":""}</span><span class="ibody"><span class="iname">${esc(i.name)}</span><span class="isub">${q(i)}</span></span></button></li>`;
-  const names=new Set(l.items.map(i=>i.name.toLowerCase()));
-  const sugg=[...new Set([...(TEMPLATES[l.name]?.items||[]),...S.prefs.flatMap(p=>PREF_SUGG[p]||[])])].filter(n=>!names.has(n.toLowerCase())&&!blocked(n)).slice(0,10);
+  const rowEdit=(i,price)=>{const ql=fmtQty(i.qty,i.unit);return `<li class="item"><button class="ibody" data-edit="${i.id}"><div class="iname">${esc(i.name)}</div>${ql?`<div class="isub">${esc(ql)}</div>`:""}</button>
+    ${price?`<button class="iprice ${i.price?"":"empty"}" data-edit="${i.id}">${i.price?brl(i.price*i.qty):"+ preço"}</button>`:""}</li>`};
+  const rowShop=i=>{const ql=fmtQty(i.qty,i.unit);return `<li class="item big ${i.done?"done":""}"><button class="mrow" data-toggle="${i.id}" aria-pressed="${!!i.done}"><span class="check">${i.done?"✓":""}</span><span class="ibody"><span class="iname">${esc(i.name)}</span>${ql?`<span class="isub">${esc(ql)}</span>`:""}</span></button></li>`};
   const idx={montar:0,mercado:1,cupom:2,done:3},dt=doneTotal(l);
-  const head=`<div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><span class="row" style="gap:2px"><button class="iconbtn" data-act="share-list" aria-label="Enviar lista">📤</button><button class="iconbtn" data-act="list-opts" aria-label="Editar nome e cor da lista">✏️</button></span></div>
-    <div class="lhead c-${l.color}"><h2>${l.em} ${esc(l.name)}</h2>${l.date?`<div class="ldate">📅 ${fmtLong(l.date)}</div>`:""}<div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>
-      <div class="meta"><span>${s.d} de ${s.tot} no carrinho</span><span>${brl(s.v)}</span></div>${l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}</div>`;
-  const steps=stage==="done"?"":`<div class="steps3" role="tablist">${[["montar","Montar"],["mercado","No mercado"],["cupom","Cupom"]].map(([k,t],i)=>`<button class="st ${k===stage?"on":""} ${i<idx[stage]?"past":""}" data-stage="${k}" aria-current="${k===stage?"step":"false"}"><b>${i<idx[stage]?"✓":i+1}</b>${t}</button>`).join("")}</div>`;
+  const meta=stage==="montar"?`<span class="lcount">${s.tot} ${s.tot===1?"item":"itens"}</span><span></span>`
+    :stage==="mercado"?`<span class="lcount">${s.d} de ${s.tot} no carrinho</span><span></span>`
+    :`<span class="lcount">${s.d} ${s.d===1?"item comprado":"itens comprados"}</span><span>${(l.cupomTotal||l.total||dt)?brl(l.cupomTotal||l.total||dt):""}</span>`;
+  const head=`<div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><span class="row" style="gap:2px"><button class="iconbtn" data-act="share-list" aria-label="Enviar lista">📤</button><button class="iconbtn" data-act="list-opts" aria-label="Mudar nome ou data da lista">✏️</button></span></div>
+    <div class="lhead c-list"><h2>${esc(l.name)}</h2>${l.date?`<div class="ldate">📅 ${fmtLong(l.date)}</div>`:""}${stage==="montar"?"":`<div class="bar"><i style="width:${s.tot?s.d/s.tot*100:0}%"></i></div>`}
+      <div class="meta">${meta}</div>${S.budgetOn&&l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}</div>`;
+  const steps=stage==="done"?"":`<div class="steps3">${[["montar","Montar"],["mercado","No mercado"],["cupom","Cupom"]].map(([k,t],i)=>`<button class="st ${k===stage?"on":""} ${i<idx[stage]?"past":""}" data-stage="${k}" aria-current="${k===stage?"step":"false"}"><b>${i<idx[stage]?"✓":i+1}</b>${t}</button>`).join("")}</div>`;
   let body="";
-  if(stage==="montar") body=`<div class="adder"><textarea id="add-txt" placeholder="Adicionar item… ex.: 2 leite, pão" aria-label="Adicionar itens"></textarea>
-      <button class="round mic" data-act="mic" aria-label="Falar a lista">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
-    ${sugg.length?`<div><p class="sec">Sugestões</p><div class="sugg">${sugg.map(n=>`<button class="chip" data-sugg="${esc(n)}">+ ${esc(n)}</button>`).join("")}</div></div>`:""}
-    ${l.items.length?`<p class="hint" style="margin:0">Toque num item para mudar quantidade, preço ou remover.</p>${grouped(l.items,rowEdit)}<button class="cta alt" data-stage="mercado">Ir para o mercado →</button>`
-      :`<div class="empty">${mascot(80,"think")}<p>Lista vazia. Escreva ou fale os itens aqui em cima.</p></div>`}`;
-  else if(stage==="mercado") body=`<p class="hint" style="margin:0">Toque no item quando colocar no carrinho.</p>
+  if(stage==="montar") body=`${tipBox("montar","Confira a lista. Toque num item para mudar a quantidade ou remover.")}
+    <div class="adder"><input id="add-txt" class="padd" placeholder="+ adicionar item" aria-label="Adicionar item" enterkeyhint="done" autocomplete="off">
+      <button class="round mic" data-act="mic" aria-label="Falar o item">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
+    ${l.items.length?`${grouped(l.items,i=>rowEdit(i,false))}<button class="cta alt" data-stage="mercado">Ir para o mercado →</button>`
+      :`<div class="empty"><p>Lista vazia. Escreva ou fale um item aqui em cima.</p></div>`}`;
+  else if(stage==="mercado") body=`${tipBox("mercado","Toque no item quando colocar no carrinho.")}
     ${pend.length?grouped(pend,rowShop):`<div class="donebox"><b>Tudo no carrinho! 🎉</b>Agora é só passar no caixa.</div>`}
     ${done.length?`<p class="sec">No carrinho · ${done.length}</p><ul class="items">${done.map(rowShop).join("")}</ul>`:""}
     <button class="cta alt" data-stage="cupom">Passei no caixa →</button>`;
-  else if(stage==="cupom") body=`${l.cupomSaved?`<div class="donebox"><b>✓ Preços do cupom salvos</b>${l.cupomTotal?`Total do cupom: ${brl(l.cupomTotal)}`:""}</div>`
-      :`<button class="promo c-lilac" data-act="cupom"><span class="em">📷</span><span class="t"><b>Fotografar o cupom fiscal</b>Eu salvo os preços, acerto as quantidades e marco o que faltou.</span><span aria-hidden="true" style="font-size:22px">›</span></button>`}
-    ${done.length?`<p class="sec">Comprados · ${done.length}</p><ul class="items">${done.map(rowEdit).join("")}</ul>`:`<p class="hint" style="margin:0">Nenhum item marcado no carrinho ainda.</p>`}
-    <button class="cta ${l.cupomSaved?"alt":""}" data-act="checkout">Concluir compra${(l.cupomTotal||dt)?` · ${brl(l.cupomTotal||dt)}`:""}</button>
+  else if(stage==="cupom") body=`${tipBox("cupom","Fotografe o cupom fiscal. O app salva o preço de cada item e marca o que faltou.")}
+    ${l.cupomSaved?`<div class="donebox"><b>✓ Preços do cupom salvos</b>${l.cupomTotal?`Total do cupom: ${brl(l.cupomTotal)}`:""}</div>`
+      :`<button class="cta alt" data-act="cupom">📷 Fotografar o cupom fiscal</button>`}
+    ${done.length?`<p class="sec">Comprados · ${done.length}</p><ul class="items">${done.map(i=>rowEdit(i,true)).join("")}</ul>`:`<p class="hint" style="margin:0">Nenhum item marcado no carrinho ainda.</p>`}
+    <button class="cta ${l.cupomSaved?"alt":""}" data-act="checkout">Concluir compra</button>
     ${l.cupomSaved?"":`<p class="hint" style="text-align:center;margin:0">Sem cupom? Pode concluir mesmo assim.</p>`}`;
   else body=`<div class="donebox"><b>✓ Compra concluída</b>${l.date?esc(fmtLong(l.date)):""}${(l.total||dt)?` · ${brl(l.total||dt)}`:""}</div>
     <div class="actions"><button class="btn dark" data-act="reuse">🔁 Usar de novo hoje</button><button class="btn" data-act="reopen">Reabrir</button></div>
-    ${l.items.length?grouped(l.items,rowEdit):""}`;
+    ${l.items.length?grouped(l.items,i=>rowEdit(i,true)):""}`;
   return `<div class="screen">${head}${steps}${body}${tabs("home")}</div>`;
 }
 
@@ -474,9 +500,10 @@ function renderSettings(){
   return `<div class="screen"><div class="topbar"><h2>Ajustes</h2></div>
     ${card("Você",`<label class="field">Seu nome<input id="st-name" value="${esc(S.name)}" placeholder="Como te chamo?" maxlength="30"></label>
       <div class="field">Pessoas na casa<div class="stepper" style="justify-content:flex-start"><button data-act="st-minus" aria-label="Menos uma pessoa">−</button><output id="st-n">${S.people||defaultPeople()}</output><button data-act="st-plus" aria-label="Mais uma pessoa">+</button></div></div>`)}
-    ${card("Meus itens e categorias",`${mut(`${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. São os itens que aparecem na Nova lista.`)}<button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar itens e categorias</button>`)}
+    ${card("Meus itens e categorias",`${mut(`${getPlan().length} categorias. São os itens que aparecem na Nova lista.`)}<button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar itens e categorias</button>
+      <div class="prow"><span>Controlar orçamento do mês</span><button class="chip ${S.budgetOn?"on":""}" data-act="budget-toggle" aria-pressed="${!!S.budgetOn}">${S.budgetOn?"Ligado":"Desligado"}</button></div>
+      ${S.budgetOn?mut(`Defina o valor e a parte de cada categoria em Editar itens e categorias.${S.budget?` Orçamento: ${brl(S.budget)}.`:""}`):""}`)}
     ${card("Aparência",`<div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div>`)}
-    ${card("Preferências da casa",`${mut("Ajustam as sugestões e a compra do mês.")}${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}`)}
     ${card("Backup",`${mut("Guarde uma cópia das suas listas e preços para trocar de celular ou passar do navegador para o app instalado.")}
       <div class="actions"><button class="btn dark" data-act="backup">Copiar backup</button><button class="btn" data-act="restore">Restaurar backup</button></div>
       ${S.lastBackup?`<span class="isub">Último backup: ${new Date(S.lastBackup).toLocaleDateString("pt-BR")}</span>`:""}`)}
@@ -495,11 +522,11 @@ function editItem(l,it){
   sheet(`<h2>Editar item</h2>
     <label class="field">Nome<input id="e-name" value="${esc(it.name)}"></label>
     <div class="grid2"><label class="field">Quantidade<input id="e-qty" type="number" inputmode="decimal" min="0" step="0.5" value="${it.qty}"></label>
-    <label class="field">Unidade<select id="e-unit">${["un","kg","pct","cx","L"].map(u=>`<option ${u===it.unit?"selected":""}>${u}</option>`).join("")}</select></label></div>
+    <label class="field">Unidade<select id="e-unit">${[["un","unidade"],["kg","kg"],["pct","pacote"],["dz","dúzia"],["cx","caixa"],["L","litro"]].map(([v,t])=>`<option value="${v}" ${v===(it.unit||"un")?"selected":""}>${t}</option>`).join("")}</select></label></div>
     <label class="field">Preço unitário (R$)<input id="e-price" type="number" inputmode="decimal" min="0" step="0.01" value="${it.price??""}" placeholder="0,00"></label>
-    <div class="grid2"><label class="field">Tamanho da embalagem<input id="e-size" type="number" inputmode="decimal" min="0" value="${it.size??""}" placeholder="ex.: 500"></label>
+    <details><summary class="link" style="padding:6px 0;cursor:pointer">Mais detalhes (embalagem)</summary><div class="grid2"><label class="field">Tamanho da embalagem<input id="e-size" type="number" inputmode="decimal" min="0" value="${it.size??""}" placeholder="ex.: 500"></label>
     <label class="field">Medida<select id="e-su">${["g","kg","ml","L","un"].map(u=>`<option ${u===(it.sizeUnit||"g")?"selected":""}>${u}</option>`).join("")}</select></label></div>
-    <p class="hint" style="margin:0">Com o tamanho eu descubro quando a embalagem diminui sem o preço baixar.</p>
+    <p class="hint" style="margin:6px 0 0">Com o tamanho dá para saber quando a embalagem diminui sem o preço baixar.</p></details>
     <button class="cta alt" id="e-save">Salvar</button><button class="danger" id="e-del">Remover item</button>`,(el,close)=>{
     el.querySelector("#e-save").onclick=()=>{const n=el.querySelector("#e-name").value.trim();if(!n){toast("Dá um nome pro item.");return}
       it.name=n;it.qty=parseFloat(el.querySelector("#e-qty").value)||1;it.unit=el.querySelector("#e-unit").value;
@@ -510,21 +537,15 @@ function editItem(l,it){
   });
 }
 function listForm(l){
-  const isNew=!l;l=l||{name:"",color:COLORS[S.lists.length%6],em:"🧺"};
-  const ems=["🧺","🛒","🔥","🍅","💊","🏠","🐶","🎂","🧴","📎"];
-  sheet(`<h2>${isNew?"Nova lista":"Editar lista"}</h2>
-    <label class="field">Nome<input id="l-name" value="${esc(l.name)}" placeholder="ex.: Escritório" maxlength="40"></label>
-    <div class="group"><p class="glabel">Cor</p><div class="chips">${COLORS.map(c=>`<button class="chip c-${c} ${c===l.color?"on":""}" data-c="${c}" style="color:#1A1512;width:44px;height:44px;padding:0" aria-label="${c}">${c===l.color?"✓":""}</button>`).join("")}</div></div>
-    <div class="group"><p class="glabel">Ícone</p><div class="chips">${ems.map(e=>`<button class="chip ${e===l.em?"on":""}" data-e="${e}">${e}</button>`).join("")}</div></div>
-    <button class="cta alt" id="l-save">${isNew?"Criar lista":"Salvar"}</button>${isNew?"":`<button class="danger" id="l-del">Apagar lista</button>`}`,(el,close)=>{
-    let color=l.color,em=l.em;
-    el.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{color=b.dataset.c;el.querySelectorAll("[data-c]").forEach(x=>{x.classList.toggle("on",x===b);x.textContent=x===b?"✓":""})});
-    el.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{em=b.dataset.e;el.querySelectorAll("[data-e]").forEach(x=>x.classList.toggle("on",x===b))});
-    el.querySelector("#l-save").onclick=()=>{const n=el.querySelector("#l-name").value.trim();if(!n){toast("Dá um nome pra lista.");return}
-      if(isNew){const nl={id:uid(),name:n,color,em,items:[]};S.lists.push(nl);ui.listId=nl.id;ui.screen="list"}else Object.assign(l,{name:n,color,em});
-      save();close();render()};
-    const del=el.querySelector("#l-del");if(del){let armed=false;del.onclick=()=>{if(!armed){armed=true;del.textContent="Toque de novo pra apagar";return}
-      S.lists=S.lists.filter(x=>x!==l);save();close();ui.screen="home";render()}}
+  if(!l)return;
+  sheet(`<h2>Editar lista</h2>
+    <label class="field">Nome<input id="l-name" value="${esc(l.name)}" maxlength="40"></label>
+    <label class="field">Data<input id="l-date" type="date" value="${l.date||todayISO()}"></label>
+    <button class="cta alt" id="l-save">Salvar</button><button class="danger" id="l-del">Apagar lista</button>`,(el,close)=>{
+    el.querySelector("#l-save").onclick=()=>{const n=el.querySelector("#l-name").value.trim();if(!n){toast("Dê um nome para a lista.");return}
+      l.name=n;l.date=el.querySelector("#l-date").value||l.date;save();close();render()};
+    const del=el.querySelector("#l-del");let armed=false;del.onclick=()=>{if(!armed){armed=true;del.textContent="Toque de novo para apagar";return}
+      S.lists=S.lists.filter(x=>x!==l);save();close();ui.screen="home";render()};
   });
 }
 
@@ -610,6 +631,9 @@ function bind(){
     else if(a==="reopen"){l.closed=false;l.stage="mercado";save();render();scrollTo(0,0)}
     else if(a==="reuse")reuseList(l);
     else if(a==="pick-month")pickMonth();
+    else if(a==="pk-meta"){ui.pick.showMeta=true;const y=scrollY;render();scrollTo(0,y)}
+    else if(a==="tip-ok"){S.tips={...(S.tips||{}),[b.dataset.tip]:1};save();const y=scrollY;render();scrollTo(0,y)}
+    else if(a==="budget-toggle"){S.budgetOn=!S.budgetOn;save();const y=scrollY;render();scrollTo(0,y)}
     else if(a==="reset"){if(b.dataset.armed){S=blank();save();ui={...ui,screen:"onb",step:0};applyTheme(ui.ob.theme);render()}else{b.dataset.armed=1;b.textContent="Toque de novo pra confirmar"}}
   });
   const go=(el,fn)=>{A.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel"));el.classList.add("sel");setTimeout(fn,180)};
@@ -638,13 +662,13 @@ function bind(){
 /* ---------- Lista padrão do mês ---------- */
 function defaultPeople(){return S.people||(S.prefs.includes("Moro sozinho")?1:2+(S.prefs.includes("Tem criança")?1:0))}
 function getPlan(){return S.plan||JSON.parse(JSON.stringify(DEFAULT_PLAN))}
-function monthItems(people){
+function monthItems(people,all){
   const P=S.prefs,vegan=P.includes("Sou vegano"),pet=P.includes("Tenho pet"),bebe=P.includes("Tem bebê");
   const plan=getPlan();if(!plan.length)return [];
   const catBy=(re,fb)=>(plan.find(c=>re.test(c.name))||plan[fb]||plan[0]).name;
   const PROT=catBy(/prote/i,0),HORT=catBy(/horti/i,1),MERC=catBy(/merce/i,2),PAD=catBy(/padar|matin/i,4);
   let rows=[];
-  plan.forEach(c=>c.items.forEach(it=>{if(it.need==="pet"&&!pet)return;if(it.need==="bebe"&&!bebe)return;rows.push([c.name,it.name,it.unit||"un",it.pp??.5,it.min??1])}));
+  plan.forEach(c=>c.items.forEach(it=>{if(!all&&it.need==="pet"&&!pet)return;if(!all&&it.need==="bebe"&&!bebe)return;rows.push([c.name,it.name,it.unit||"un",it.pp??.5,it.min??1])}));
   const swap=(a,b)=>rows.forEach(r=>{if(r[1]===a)r[1]=b});
   const drop=re=>{rows=rows.filter(r=>!re.test(r[1]))};
   if(P.includes("Sem lactose")){swap("Leite 1L","Leite sem lactose 1L");swap("Iogurte","Iogurte sem lactose");swap("Queijo muçarela 200g","Queijo sem lactose");swap("Requeijão","Requeijão sem lactose")}
@@ -690,50 +714,68 @@ const fmtD=iso=>iso.slice(8,10)+"/"+iso.slice(5,7);
 const fmtLong=iso=>new Date(iso+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
 const defName=iso=>`Mercado · ${fmtD(iso)}`;
 function relation(){
-  const base=monthItems(1).map(i=>({cat:i.cat,name:i.name,unit:i.unit}));
+  const base=monthItems(1,true).map(i=>({cat:i.cat,name:i.name,unit:i.unit}));
   const seen=new Set(base.map(i=>norm(i.name)));
   S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);if(!seen.has(k)){seen.add(k);base.push({cat:"Já usados nas suas listas",name:i.name,unit:i.unit||"un"})}}));
   (ui.pick?.extra||[]).forEach(n=>{if(!seen.has(norm(n))){seen.add(norm(n));base.push({cat:"Outros",name:n,unit:"un"})}});
   return base;
 }
 function renderPick(){
-  const pk=ui.pick,R=relation(),plan=getPlan(),cats=[...new Set(R.map(i=>i.cat))],n=Object.keys(pk.sel).length;
-  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><h2 style="font-size:22px">Nova lista de compras</h2><span style="width:44px"></span></div>
-    <div class="grid2"><label class="field">Data da compra<input id="pk-date" type="date" value="${pk.date}"></label>
-      <label class="field">Nome (opcional)<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>
-    <input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar na relação" aria-label="Buscar item na relação">
-    <button class="btn ${pk.month?"":"dark"}" data-act="pick-month">${pk.month?"✕ Desmarcar a compra do mês":`📅 Marcar a compra do mês inteira (${S.people||defaultPeople()} ${(S.people||defaultPeople())>1?"pessoas":"pessoa"})`}</button>
-    <p class="hint" style="margin:0">Ou toque só no que vai comprar hoje. Quantidade e preço você ajusta depois, na lista.</p>
-    <div class="adder"><input id="pk-new" class="padd" placeholder="Não achou? Inclua outro item" aria-label="Incluir outro item"><button class="btn" id="pk-add">Incluir</button></div>
+  const pk=ui.pick,R=relation(),plan=getPlan(),cats=[...new Set(R.map(i=>i.cat))],n=Object.keys(pk.sel).length;pk.open=pk.open||{};
+  const chip=(c,i)=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`};
+  const freq={};S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);freq[k]=(freq[k]||0)+1}));
+  const seen=new Set(),top=R.filter(i=>freq[norm(i.name)]&&!seen.has(norm(i.name))&&seen.add(norm(i.name))).sort((a,b)=>freq[norm(b.name)]-freq[norm(a.name)]).slice(0,12);
+  const cnt=c=>Object.keys(pk.sel).filter(k=>k.startsWith(c+"|")).length,np=S.people||defaultPeople();
+  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><h2 style="font-size:22px">Nova lista</h2><span style="width:44px"></span></div>
+    ${tipBox("pick","Toque nos itens que vai comprar. Use a busca para achar rápido ou incluir um item novo.")}
+    <div class="pkmeta">${pk.showMeta?`<div class="grid2" style="flex:1"><label class="field">Data<input id="pk-date" type="date" value="${pk.date}"></label><label class="field">Nome<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>`
+      :`<span>📅 ${pk.date===todayISO()?"Hoje":fmtD(pk.date)} · ${esc(pk.name||defName(pk.date))}</span><button class="link" data-act="pk-meta">mudar</button>`}</div>
+    <div class="pksearch"><input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar ou incluir item" aria-label="Buscar ou incluir item" autocomplete="off"><button class="btn dark" id="pk-addq" hidden>+ Incluir</button></div>
+    <div id="pk-list" class="group">
+    ${top.length?`<div class="group pkg top"><p class="glabel">⭐ Mais comprados</p><div class="chips">${top.map(i=>chip(i.cat,i)).join("")}</div></div>`:""}
     ${cats.map(c=>{const em=(plan.find(x=>x.name===c)||{}).em||(c.startsWith("Já")?"🕘":"🛍️"),its=R.filter(i=>i.cat===c);
-      const inPlan=plan.some(x=>x.name===c),ed=inPlan&&pk.edit===c;
-      return `<div class="group pkg${ed?" editing":""}"><div class="prow"><p class="glabel">${em} ${esc(c)}</p><span class="pkh">${inPlan?`<button class="link${ed?" on":""}" data-pkedit="${esc(c)}">${ed?"Pronto":"Editar"}</button>`:""}${ed?"":`<button class="link" data-pkall>Marcar todos</button>`}</span></div>
-      ${ed?`<div class="chips">${its.map(i=>`<span class="chip ed">${esc(i.name)}<button data-pkrm="${esc(i.name)}" aria-label="Excluir ${esc(i.name)} de ${esc(c)}">✕</button></span>`).join("")||`<span class="isub">Nenhum item.</span>`}</div>
-      <div class="adder"><input class="padd" id="pk-in" placeholder="Novo item (ex.: Morango)" aria-label="Novo item em ${esc(c)}"><button class="btn dark" data-pkin>Incluir</button></div>
-      <p class="isub" style="margin:0">Toque no ✕ para excluir. O que você mudar aqui fica salvo na sua relação.</p>`
-      :`<div class="chips">${its.map(i=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`}).join("")}${inPlan?`<button class="chip pkplus" data-pkedit="${esc(c)}" data-pkopen="1">+ Novo item</button>`:""}</div>`}</div>`}).join("")}
-    <button class="btn" data-act="plan-open" data-from="pick" style="align-self:center;min-height:38px;padding:0 14px;font-size:14px">🗂️ Editar itens e categorias</button>
+      const inPlan=plan.some(x=>x.name===c),ed=inPlan&&pk.edit===c,open=ed||pk.open[c],m=cnt(c);
+      return `<div class="group pkg${open?" open":""}${ed?" editing":""}" data-cat="${esc(c)}">
+      <button class="pkhead" data-pktoggle="${esc(c)}" aria-expanded="${!!open}"><span>${em} ${esc(c)}</span><span class="pkcount"><span class="pkn">${m?m+" ✓":""}</span><span class="chev">›</span></span></button>
+      <div class="pkbody">${ed?`<div class="chips">${its.map(i=>`<span class="chip ed">${esc(i.name)}<button data-pkrm="${esc(i.name)}" aria-label="Excluir ${esc(i.name)} de ${esc(c)}">✕</button></span>`).join("")||`<span class="isub">Nenhum item.</span>`}</div>
+        <div class="adder"><input class="padd" id="pk-in" placeholder="Novo item (ex.: Morango)" aria-label="Novo item em ${esc(c)}"><button class="btn dark" data-pkin>Incluir</button></div>
+        <div class="pkh"><button class="link on" data-pkedit="${esc(c)}">Pronto</button></div>`
+      :`<div class="chips">${its.map(i=>chip(c,i)).join("")}${inPlan?`<button class="chip pkplus" data-pkedit="${esc(c)}" data-pkopen="1">+ Novo item</button>`:""}</div>
+        ${inPlan?`<div class="pkh"><button class="link" data-pkall>Marcar todos</button><button class="link" data-pkedit="${esc(c)}">Editar</button></div>`:""}`}</div></div>`}).join("")}
+    </div>
+    <button class="btn ${pk.month?"":"dark"}" data-act="pick-month">${pk.month?"✕ Desmarcar a compra do mês":`📅 Marcar a compra do mês (${np} ${np>1?"pessoas":"pessoa"})`}</button>
+    <button class="link" data-act="plan-open" data-from="pick" style="align-self:center">🗂️ Editar itens e categorias</button>
     <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n?"":"disabled"}>${n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"}</button></div></div>`;
 }
 function bindPick(A){
-  const pk=ui.pick;
+  const pk=ui.pick;pk.open=pk.open||{};pk.qty=pk.qty||{};
   const upd=()=>{const n=Object.keys(pk.sel).length,b=A.querySelector("[data-act=pick-go]");b.disabled=!n;b.textContent=n?`Criar lista com ${n} ${n>1?"itens":"item"}`:"Escolha os itens"};
-  const set=(c,on)=>{if(on)pk.sel[c.dataset.k]=c.dataset.u||"un";else{delete pk.sel[c.dataset.k];if(pk.qty)delete pk.qty[c.dataset.k]}c.classList.toggle("on",on);c.setAttribute("aria-pressed",on)};
-  A.querySelectorAll(".chip.pk").forEach(c=>c.onclick=()=>{set(c,!pk.sel[c.dataset.k]);upd()});
-  A.querySelectorAll("[data-pkall]").forEach(b=>b.onclick=()=>{const cs=[...b.closest(".pkg").querySelectorAll(".chip.pk")].filter(c=>!c.hidden),all=cs.every(c=>pk.sel[c.dataset.k]);
-    cs.forEach(c=>set(c,!all));b.textContent=all?"Marcar todos":"Desmarcar todos";upd()});
-  $("#pk-date").onchange=e=>{pk.date=e.target.value||todayISO();$("#pk-name").placeholder=defName(pk.date)};
-  $("#pk-name").oninput=e=>{pk.name=e.target.value};
-  $("#pk-q").oninput=e=>{const q=norm(e.target.value);A.querySelectorAll(".pkg").forEach(g=>{let any=false;g.querySelectorAll(".chip.pk").forEach(c=>{const ok=!q||norm(c.textContent).includes(q);c.hidden=!ok;any=any||ok});g.hidden=!any})};
-  const add=()=>{const inp=$("#pk-new"),v=inp.value.trim();if(!v)return;
-    v.split(/[,;]/).map(t=>t.trim()).filter(Boolean).forEach(t=>{const nm=t.charAt(0).toUpperCase()+t.slice(1);if(!pk.extra.includes(nm))pk.extra.push(nm);
-      const hit=relation().find(i=>norm(i.name)===norm(nm));pk.sel[(hit?hit.cat:"Outros")+"|"+(hit?hit.name:nm)]=hit?.unit||"un"});
+  const counts=()=>A.querySelectorAll(".pkg[data-cat]").forEach(g=>{const c=g.dataset.cat,m=Object.keys(pk.sel).filter(k=>k.startsWith(c+"|")).length,el=g.querySelector(".pkn");if(el)el.textContent=m?m+" ✓":""});
+  const set=(k,u,on)=>{if(on)pk.sel[k]=u||"un";else{delete pk.sel[k];delete pk.qty[k]}
+    A.querySelectorAll(".chip.pk").forEach(c=>{if(c.dataset.k===k){c.classList.toggle("on",on);c.setAttribute("aria-pressed",on)}});counts()};
+  A.querySelectorAll(".chip.pk").forEach(c=>c.onclick=()=>{set(c.dataset.k,c.dataset.u,!pk.sel[c.dataset.k]);upd()});
+  A.querySelectorAll("[data-pktoggle]").forEach(b=>b.onclick=()=>{const c=b.dataset.pktoggle,g=b.closest(".pkg");pk.open[c]=!g.classList.contains("open");g.classList.toggle("open",pk.open[c]);b.setAttribute("aria-expanded",pk.open[c])});
+  A.querySelectorAll("[data-pkall]").forEach(b=>b.onclick=()=>{const cs=[...b.closest(".pkg").querySelectorAll(".chip.pk")],all=cs.every(c=>pk.sel[c.dataset.k]);
+    cs.forEach(c=>set(c.dataset.k,c.dataset.u,!all));b.textContent=all?"Marcar todos":"Desmarcar todos";upd()});
+  const d=$("#pk-date");if(d)d.onchange=e=>{pk.date=e.target.value||todayISO();const nm=$("#pk-name");if(nm)nm.placeholder=defName(pk.date)};
+  const nm=$("#pk-name");if(nm)nm.oninput=e=>{pk.name=e.target.value};
+  const q=$("#pk-q"),addq=$("#pk-addq"),list=$("#pk-list");
+  const filter=()=>{const v=q.value.trim(),t=norm(v);list.classList.toggle("searching",!!t);let exact=false;
+    A.querySelectorAll("#pk-list .pkg").forEach(g=>{let any=false;g.querySelectorAll(".chip.pk").forEach(c=>{const ct=norm(c.textContent),ok=!t||ct.includes(t);c.hidden=!ok;any=any||ok;if(t&&ct===t)exact=true});
+      g.hidden=!!t&&(!any||g.classList.contains("top"))});
+    addq.hidden=!t||exact;addq.textContent=`+ Incluir "${v.length>16?v.slice(0,16)+"…":v}"`};
+  q.oninput=filter;
+  const addQ=()=>{const v=q.value.trim();if(!v)return;
+    v.split(/[,;]/).map(t=>t.trim()).filter(Boolean).forEach(t=>{const nm=t.charAt(0).toUpperCase()+t.slice(1),hit=relation().find(i=>norm(i.name)===norm(nm));
+      if(!hit&&!pk.extra.includes(nm))pk.extra.push(nm);pk.sel[(hit?hit.cat:"Outros")+"|"+(hit?hit.name:nm)]=hit?.unit||"un";if(!hit)pk.open["Outros"]=true});
     const y=scrollY;render();scrollTo(0,y);toast("Incluído e marcado.")};
-  $("#pk-new").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}};$("#pk-add").onclick=add;
+  addq.onclick=addQ;
+  q.onkeydown=e=>{if(e.key!=="Enter")return;e.preventDefault();const vis=[...A.querySelectorAll("#pk-list .chip.pk")].filter(c=>!c.hidden&&!c.closest(".pkg").hidden);
+    if(vis.length===1){vis[0].click();q.value="";filter();toast(`${vis[0].textContent} marcado.`)}else if(!vis.length)addQ();else toast("Toque no item certo ou em + Incluir.")};
   // incluir/excluir itens de uma categoria da relação
   const keep=fn=>{const y=scrollY;fn();render();scrollTo(0,y)};
   const editPlan=f=>{const P=getPlan(),cat=P.find(x=>x.name===pk.edit);if(!cat)return;f(cat);S.plan=P;save()};
-  A.querySelectorAll("[data-pkedit]").forEach(b=>b.onclick=()=>{const c=b.dataset.pkedit;keep(()=>{pk.edit=b.dataset.pkopen?c:(pk.edit===c?null:c)});if(pk.edit)$("#pk-in")?.focus({preventScroll:true})});
+  A.querySelectorAll("[data-pkedit]").forEach(b=>b.onclick=()=>{const c=b.dataset.pkedit;keep(()=>{pk.edit=b.dataset.pkopen?c:(pk.edit===c?null:c);if(pk.edit)pk.open[c]=true});if(pk.edit)$("#pk-in")?.focus({preventScroll:true})});
   A.querySelectorAll("[data-pkrm]").forEach(b=>b.onclick=()=>{const n=b.dataset.pkrm,c=pk.edit;keep(()=>editPlan(cat=>{const i=cat.items.findIndex(x=>norm(x.name)===norm(n));
     if(i>=0)cat.items.splice(i,1);else(cat.hide=cat.hide||[]).push(n);delete pk.sel[c+"|"+n]}));toast(`${n} excluído de ${c}.`)});
   const addIn=()=>{const inp=$("#pk-in");if(!inp)return;const v=inp.value.trim();if(!v){inp.focus();return}const c=pk.edit;let k=0;
@@ -744,6 +786,7 @@ function bindPick(A){
   const pin=$("#pk-in");if(pin)pin.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addIn()}};
   A.querySelectorAll("[data-pkin]").forEach(b=>b.onclick=addIn);
 }
+
 function pickMonth(){
   const pk=ui.pick,y=scrollY;
   if(pk.month){pk.sel={};pk.qty={};pk.month=false;render();scrollTo(0,y);toast("Compra do mês desmarcada.");return}
@@ -763,14 +806,14 @@ function createPicked(){
 function renderPlan(){
   const P=getPlan(),sum=P.reduce((a,c)=>a+(+c.pct||0),0),B=S.budget||0,ok=Math.round(sum)===100;
   return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="${ui.planFrom==="pick"&&ui.pick?"pick":"settings"}" aria-label="Voltar">‹</button><h2 style="font-size:22px">Itens e categorias</h2><button class="link" data-act="plan-reset">Restaurar</button></div>
-    <p style="margin:0;color:var(--muted);line-height:1.45">Esses itens aparecem na <b>Nova lista</b> e na compra do mês. Mude nomes, tire ou inclua itens e ajuste a parte do orçamento de cada categoria.</p>
-    <div class="card"><label class="field">Orçamento do mês (R$, opcional)<input id="p-budget" type="number" inputmode="decimal" min="0" step="10" value="${B||""}" placeholder="ex.: 1200"></label>
+    <p style="margin:0;color:var(--muted);line-height:1.45">Esses itens aparecem na <b>Nova lista</b> e na compra do mês. Mude nomes, tire ou inclua itens e organize por categoria.</p>
+    ${S.budgetOn?`<div class="card"><label class="field">Orçamento do mês (R$)<input id="p-budget" type="number" inputmode="decimal" min="0" step="10" value="${B||""}" placeholder="ex.: 1200"></label>
       <div class="pctbar" aria-hidden="true">${P.map((c,i)=>`<i style="flex:${+c.pct||0};background:var(--${COLORS[i%6]})"></i>`).join("")}</div>
       <div class="meta"><span>Soma das partes</span><span style="color:${ok?"var(--good)":"var(--bad)"}">${sum}%${ok?" ✓":" · o ideal é 100%"}</span></div>
-      <p class="isub" style="margin:0">Divisão de referência. Varia com o perfil da casa.</p></div>
+      <p class="isub" style="margin:0">Divisão de referência. Varia com o perfil da casa.</p></div>`:""}
     ${P.map((c,i)=>`<div class="card pcat" data-ci="${i}">
-      <div class="prow"><span class="cem">${c.em||"🛍️"}</span><input class="pname" data-f="name" value="${esc(c.name)}" aria-label="Nome da categoria"><label class="ppct"><input type="number" data-f="pct" min="0" max="100" step="1" value="${c.pct}" aria-label="Parte do orçamento de ${esc(c.name)}">%</label></div>
-      ${B?`<div class="isub">${brl(B*(+c.pct||0)/100)} por mês</div>`:""}
+      <div class="prow"><span class="cem">${c.em||"🛍️"}</span><input class="pname" data-f="name" value="${esc(c.name)}" aria-label="Nome da categoria">${S.budgetOn?`<label class="ppct"><input type="number" data-f="pct" min="0" max="100" step="1" value="${c.pct}" aria-label="Parte do orçamento de ${esc(c.name)}">%</label>`:""}</div>
+      ${S.budgetOn&&B?`<div class="isub">${brl(B*(+c.pct||0)/100)} por mês</div>`:""}
       <div class="chips">${c.items.map((it,j)=>`<span class="chip ed">${esc(it.name)}${it.need?` <small>(${it.need==="pet"?"se tiver pet":"se tiver bebê"})</small>`:""}<button data-rm="${j}" aria-label="Tirar ${esc(it.name)}">✕</button></span>`).join("")||`<span class="isub">Nenhum item ainda.</span>`}</div>
       <div class="adder"><input class="padd" placeholder="Adicionar item (ex.: Azeitona)" aria-label="Adicionar item em ${esc(c.name)}"><button class="btn" data-addi>Adicionar</button></div>
       <button class="danger" data-delcat style="align-self:flex-start;padding:4px 0">Apagar categoria</button></div>`).join("")}
@@ -905,7 +948,7 @@ function unb64u(t){t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="
 function hashStr(t){let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)}
 function listPayload(l){return{n:l.name,d:l.date||"",i:l.items.map(i=>[i.name,i.qty,i.unit||"un",i.cat||"",i.done?1:0])}}
 function shareUrl(l){return APP_URL+"#lista="+b64u(JSON.stringify(listPayload(l)))}
-const qtyTxt=(q,u)=>(q===1&&(u||"un")==="un")?"":` (${String(q).replace(".",",")} ${u})`;
+const qtyTxt=(q,u)=>{const t=fmtQty(q,u);return t?` (${t})`:""};
 function groupItems(items){const order=[...new Set([...getPlan().map(c=>c.name),...items.map(i=>i.cat||"Itens")])];return order.map(c=>[c,items.filter(i=>(i.cat||"Itens")===c)]).filter(g=>g[1].length)}
 function listText(l){
   let t=`🛒 *${l.name}*${l.date&&!l.name.includes(fmtD(l.date))?` · ${fmtD(l.date)}`:""}\n`;
@@ -949,14 +992,13 @@ async function shareHtml(l){
 function shareSheet(l){
   if(!l)return;
   const url=shareUrl(l),msg=`🛒 ${l.name}${l.date&&!l.name.includes(fmtD(l.date))?` (${fmtD(l.date)})`:""}: abra para ir marcando os itens\n${url}`;
-  sheet(`<h2>Enviar lista</h2><p style="color:var(--muted)">${l.items.length} ${l.items.length===1?"item":"itens"}. Escolha como mandar pelo WhatsApp.</p>
-    <a class="share-opt main" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener"><span class="em">🔗</span><span class="t"><b>Link para ir marcando</b>Abre a lista no navegador. Quem receber toca nos itens para marcar e pode salvar no próprio app.</span></a>
-    <button class="share-opt" id="sh-html"><span class="em">📄</span><span class="t"><b>Arquivo HTML</b>Página com caixinhas para marcar. Vai como documento; abra no Safari ou no Chrome.</span></button>
+  sheet(`<h2>Enviar lista</h2><p style="color:var(--muted)">Quem receber abre a lista no celular e vai marcando os itens.</p>
+    <a class="share-opt main" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener"><span class="em">💬</span><span class="t"><b>Enviar pelo WhatsApp</b>Manda o link da lista para um contato.</span></a>
     <button class="btn" id="sh-copy" style="align-self:center">Copiar link</button>`,(el,close)=>{
-    el.querySelector("#sh-html").onclick=()=>shareHtml(l);
     el.querySelector("#sh-copy").onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>toast("Link copiado."),()=>toast("Não deu para copiar aqui."))}catch(e){toast("Não deu para copiar aqui.")}};
   });
 }
+
 /* lista recebida por link */
 function readShared(){const h=location.hash||"";if(!h.startsWith("#lista="))return null;try{const d=JSON.parse(unb64u(h.slice(7)));return d&&Array.isArray(d.i)?d:null}catch(e){return null}}
 const shKey=()=>"cm-sh-"+hashStr(location.hash||"");
@@ -969,7 +1011,7 @@ function renderShared(){
     <div class="lhead c-sky"><h2>🛒 ${esc(d.n)}</h2>${d.d?`<div class="ldate">📅 ${fmtLong(d.d)}</div>`:""}<div class="bar"><i style="width:${items.length?n/items.length*100:0}%"></i></div>
       <div class="meta"><span>${n} de ${items.length} no carrinho</span></div></div>
     <p class="hint" style="margin:0">Toque no item quando colocar no carrinho.</p>
-    ${groupItems(items).map(([c,its])=>`<p class="sec">${esc(c)} · ${its.length}</p><ul class="items">${its.map(i=>`<li class="item ${i.done?"done":""}"><button class="check" data-shk="${i.j}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?"✓":""}</button><button class="ibody" data-shk="${i.j}"><div class="iname">${esc(i.name)}</div><div class="isub">${String(i.qty).replace(".",",")} ${esc(i.unit)}</div></button></li>`).join("")}</ul>`).join("")}
+    ${groupItems(items).map(([c,its])=>`<p class="sec">${esc(c)} · ${its.length}</p><ul class="items">${its.map(i=>`<li class="item ${i.done?"done":""}"><button class="check" data-shk="${i.j}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?"✓":""}</button><button class="ibody" data-shk="${i.j}"><div class="iname">${esc(i.name)}</div><div class="isub">${esc(fmtQty(i.qty,i.unit))}</div></button></li>`).join("")}</ul>`).join("")}
     <button class="cta alt" data-act="sh-save">Salvar nas minhas listas</button>
     <p class="hint" style="text-align:center;margin:0">Feito com Compras Mercado · DomDevLabs</p></div>`;
 }
