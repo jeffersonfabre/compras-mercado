@@ -291,7 +291,7 @@ body{font-size:17px}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "2.1.0";
+const VERSION = "2.1.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -942,7 +942,8 @@ function reviewCupom(r,raw,failed){
 function selectMail(){const el=$("#dev-mail");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}
 
 /* ---------- Enviar lista (WhatsApp) ---------- */
-const APP_URL="https://compras-mercado-xi.vercel.app/";
+// link de compartilhar usa o endereço onde o app está (Vercel, Cloudflare ou outro)
+const APP_URL=(!EMBED&&/^https?:$/.test(location.protocol))?location.origin+location.pathname:"https://compras-mercado-xi.vercel.app/";
 function b64u(str){return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
 function unb64u(t){t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";return decodeURIComponent(escape(atob(t)))}
 function hashStr(t){let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)}

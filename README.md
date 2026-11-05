@@ -1,6 +1,6 @@
 # Compras Mercado
 
-App web (PWA) de lista de compras Feito por **DomDevLabs** · domdevlabs@gmail.com · v2.1.0
+App web (PWA) de lista de compras Feito por **DomDevLabs** · domdevlabs@gmail.com · v2.1.1
 
 ## Como usar
 1. **Cadastro de 1 tela:** seu nome e quantas pessoas moram na casa.
@@ -20,3 +20,7 @@ App web (PWA) de lista de compras Feito por **DomDevLabs** · domdevlabs@gmail.c
 - Instalável no celular (Android e iPhone), funciona offline; dados só no aparelho (localStorage + IndexedDB) com backup por código
 
 Arquivos: `index.html`, `manifest.webmanifest`, `sw.js`, `icons/`. Sem build.
+
+## Publicar
+- **Cloudflare Pages:** Workers & Pages → Create → Pages → Connect to Git → `compras-mercado`; Framework preset *None*, build command vazio, output directory `/`. O arquivo `_headers` já configura o service worker.
+- **Vercel:** também funciona (`vercel.json`).
