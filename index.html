@@ -218,6 +218,8 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .mail code{font-family:inherit;font-weight:700;user-select:all;-webkit-user-select:all;overflow-wrap:anywhere}
 .pickbar{position:sticky;bottom:0;margin-top:auto;padding:14px 0 calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 35%)}
 .chip.pk.on::before{content:"✓ "}
+.adder .pillin{flex:1;min-width:0;min-height:60px}
+.adder .pillin + .round{width:60px;height:60px;font-size:28px}
 .pkh{display:flex;gap:2px;flex:none}
 .pkh .link{padding:4px 6px;font-size:13px}
 .pkh .link.on{color:var(--fg);text-decoration:underline}
@@ -240,7 +242,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.6.0";
+const VERSION = "1.7.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -297,11 +299,15 @@ const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})(
 let deferredPrompt = null;
 
 let S = load();
-let ui = {screen:S.onboarded?"home":"onb", step:0, listId:null, ob:{theme:S.theme||"dark",prefs:[...(S.prefs||[])],first:"Mercado do mês",custom:"",tone:"animado",name:""}};
+let ui = {screen:S.onboarded?"home":"onb", step:S.obDraft?.step||0, listId:null, ob:S.obDraft?.ob||{theme:S.theme||"dark",prefs:[...(S.prefs||[])],first:"Mercado do mês",custom:"",tone:"animado",name:""}};
 
 function blank(){return {onboarded:false,theme:"system",prefs:[],tone:"animado",name:"",lists:[],history:[],purchases:[],sample:false}}
 function load(){try{const r=localStorage.getItem(KEY);if(r)return Object.assign(blank(),JSON.parse(r))}catch(e){}return blank()}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// Cópia de segurança no IndexedDB: se o navegador limpar o localStorage, o app recupera daqui
+const IDBP=new Promise(res=>{try{const r=indexedDB.open("compras-mercado",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch(e){res(null)}});
+async function idbGet(k){const db=await IDBP;if(!db)return null;return new Promise(res=>{try{const q=db.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+async function idbSet(k,v){const db=await IDBP;if(!db)return;try{db.transaction("kv","readwrite").objectStore("kv").put(v,k)}catch(e){}}
+function save(){const j=JSON.stringify(S);try{localStorage.setItem(KEY,j)}catch(e){}idbSet(KEY,j)}
 function applyTheme(t){if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
 applyTheme(S.onboarded?S.theme:ui.ob.theme);
 
@@ -328,6 +334,7 @@ function render(){
   const a=$("#app");
   const f={onb:renderOnb,home:renderHome,list:renderList,insights:renderInsights,settings:renderSettings,plan:renderPlan,pick:renderPick}[ui.screen];
   a.innerHTML=f();a.firstElementChild?.classList.add("fade");bind();
+  if(ui.screen==="onb"&&!S.onboarded){S.obDraft={step:ui.step,ob:ui.ob};save()}
 }
 
 function renderOnb(){
@@ -344,7 +351,7 @@ function renderOnb(){
     <h1>Você prefere o app claro ou escuro?</h1><p class="sub">Dá para trocar depois.</p>
     <div class="themes">${["light","dark"].map(t=>`<button class="tcard ${t} ${o.theme===t?"sel":""}" data-theme-pick="${t}" aria-pressed="${o.theme===t}">
       <div class="tprev"><b class="c-tomato"></b><b class="c-sky"></b><b class="c-sun"></b><b style="background:${t==="light"?"#fff":"#F7F1EB"}"></b></div>${t==="light"?"Claro":"Escuro"}</button>`).join("")}</div>
-    <button class="cta alt" style="margin-top:auto" data-act="next">Continuar</button></div>`;
+    <p class="hint" style="text-align:center;margin:0">Toque em uma opção para seguir.</p></div>`;
   if(st===2) return `<div class="screen">${top}<div class="hero" style="min-height:120px;flex:none">${mascot(90,"think")}</div>
     <h1>Tem algo que eu deva saber?</h1><p class="sub">Pra deixar as sugestões do seu jeito.</p>
     ${Object.entries(PREFS).map(([g,arr])=>`<div class="group"><p class="glabel">${g}</p><div class="chips">${arr.map(p=>`<button class="chip ${o.prefs.includes(p)?"on":""}" data-pref="${esc(p)}" aria-pressed="${o.prefs.includes(p)}">${p}</button>`).join("")}</div></div>`).join("")}
@@ -352,13 +359,13 @@ function renderOnb(){
   if(st===3) return `<div class="screen">${top}<div class="hero" style="min-height:130px">${mascot(120)}</div>
     <h1>Qual vai ser a sua primeira lista?</h1>
     <div class="pills">${Object.entries(TEMPLATES).map(([n,t])=>`<button class="pill c-${t.color} ${o.first===n&&!o.custom?"sel":""}" data-first="${n}">${n}<span class="em">${t.em}</span></button>`).join("")}
-    <input id="ob-custom" class="pillin ${o.custom?"sel":""}" placeholder="Outra… ex.: Escritório" value="${esc(o.custom)}" maxlength="40"></div>
-    <button class="cta" data-act="next">Continuar</button></div>`;
+    <div class="adder"><input id="ob-custom" class="pillin" placeholder="Outra… ex.: Escritório" value="${esc(o.custom)}" maxlength="40" enterkeyhint="go"><button class="round" data-act="ob-custom-go" aria-label="Usar esse nome">›</button></div></div>
+    <p class="hint" style="text-align:center;margin:0">Toque em uma lista para seguir.</p></div>`;
   return `<div class="screen">${top}<div class="hero" style="min-height:120px">${mascot(110)}</div>
     <h1>Como eu falo com você?</h1>
-    <div class="pills">${Object.entries(TONES).map(([k,t],i)=>`<button class="pill c-${["sky","peach","lilac"][i]} ${o.tone===k?"sel":""}" data-tone="${k}"><span>${t.label}<small>${t.d}</small></span></button>`).join("")}</div>
     <label class="field">Seu nome (opcional)<input id="ob-name" value="${esc(o.name)}" placeholder="Como te chamo?" maxlength="30" autocomplete="given-name"></label>
-    <button class="cta alt" data-act="finish">Criar minha lista</button></div>`;
+    <div class="pills">${Object.entries(TONES).map(([k,t],i)=>`<button class="pill c-${["sky","peach","lilac"][i]} ${o.tone===k?"sel":""}" data-tone="${k}"><span>${t.label}<small>${t.d}</small></span></button>`).join("")}</div>
+    <p class="hint" style="text-align:center;margin:0">Toque no jeito que prefere e sua lista fica pronta.</p></div>`;
 }
 
 function tabs(cur){return `<nav class="tabbar">${[["home","🗒️","Listas"],["insights","📈","Preços"],["settings","⚙️","Ajustes"]].map(([k,i,l])=>`<button class="tab ${cur===k?"on":""}" data-go="${k}"><span>${i}</span>${l}</button>`).join("")}</nav>`}
@@ -445,6 +452,9 @@ function renderSettings(){
     <div class="card"><p class="glabel">Preferências</p>${Object.entries(PREFS).map(([g,arr])=>`<div class="chips">${arr.map(p=>`<button class="chip ${S.prefs.includes(p)?"on":""}" data-set-pref="${esc(p)}">${p}</button>`).join("")}</div>`).join("")}</div>
     <div class="card"><p class="glabel">Divisão das compras do mês</p><p style="margin:0;color:var(--muted);line-height:1.45">${getPlan().length} categorias${S.budget?` · orçamento de ${brl(S.budget)}`:""}. Mude as sugestões e a parte do orçamento de cada uma.</p><button class="btn dark" data-go="plan" style="align-self:flex-start">Editar divisão</button></div>
     <div class="card"><p class="glabel">App no celular</p>${isStandalone()?`<p style="margin:0">✓ Você já está usando o app instalado.</p>`:`<p style="margin:0;color:var(--muted);line-height:1.45">Instale para abrir direto da tela inicial, como um app, e usar sem internet.</p><button class="btn dark" data-act="install" style="align-self:flex-start">📲 Instalar no celular</button>`}</div>
+    <div class="card"><p class="glabel">Backup dos seus dados</p><p style="margin:0;color:var(--muted);line-height:1.45">Guarde uma cópia das suas listas, preços e preferências. Serve para trocar de celular ou passar do navegador para o app instalado.</p>
+      <div class="actions"><button class="btn dark" data-act="backup">Copiar backup</button><button class="btn" data-act="restore">Restaurar backup</button></div>
+      ${S.lastBackup?`<span class="isub">Último backup: ${new Date(S.lastBackup).toLocaleDateString("pt-BR")}</span>`:""}</div>
     <div class="card"><p class="glabel">Seus dados são seus</p><p style="margin:0;color:var(--muted);line-height:1.45">Tudo fica salvo só neste aparelho. Nada vai pra servidor nenhum.</p>
       <button class="danger" data-act="reset" style="align-self:flex-start;padding-left:0">Apagar todos os meus dados</button></div>
     <div class="card"><p class="glabel">Desenvolvido por</p>
@@ -496,7 +506,7 @@ function listForm(l){
 
 /* ---------- Ações ---------- */
 function finishOnb(){
-  const o=ui.ob;S.theme=o.theme;S.prefs=o.prefs;S.tone=o.tone;S.name=o.name.trim();S.onboarded=true;
+  const o=ui.ob;S.theme=o.theme;S.prefs=o.prefs;S.tone=o.tone;S.name=o.name.trim();S.onboarded=true;delete S.obDraft;
   const name=o.custom.trim()||o.first,t=TEMPLATES[name];
   const l={id:uid(),name,color:t?.color||"sky",em:t?.em||"🧺",items:[]};
   if(name==="Mercado do mês"){l.items=monthItems(defaultPeople());l.month=true}
@@ -545,7 +555,8 @@ function bind(){
     const a=b.dataset.act,o=ui.ob,l=S.lists.find(x=>x.id===ui.listId);
     if(a==="next"){ui.step++;render()}
     else if(a==="back"){ui.step--;render()}
-    else if(a==="skip-all"||a==="have"){finishOnb()}
+    else if(a==="skip-all"){finishOnb()}
+    else if(a==="have")restoreSheet(true);
     else if(a==="finish"){finishOnb()}
     else if(a==="new-list")listForm();
     else if(a==="list-opts")listForm(l);
@@ -554,6 +565,8 @@ function bind(){
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
     else if(a==="month")monthSheet();
+    else if(a==="backup")backupSheet();
+    else if(a==="restore")restoreSheet(false);
     else if(a==="pick"){ui.pick={date:todayISO(),name:"",sel:{},extra:[]};ui.screen="pick";render();scrollTo(0,0)}
     else if(a==="pick-go")createPicked();
     else if(a==="plan-reset"){if(b.dataset.armed){S.plan=null;save();render();toast("Divisão padrão restaurada.")}else{b.dataset.armed=1;b.textContent="Confirmar?"}}
@@ -565,11 +578,14 @@ function bind(){
     else if(a==="clear-sample"){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false;save();render()}
     else if(a==="reset"){if(b.dataset.armed){S=blank();save();ui={...ui,screen:"onb",step:0};applyTheme(ui.ob.theme);render()}else{b.dataset.armed=1;b.textContent="Toque de novo pra confirmar"}}
   });
-  A.querySelectorAll("[data-theme-pick]").forEach(b=>b.onclick=()=>{ui.ob.theme=b.dataset.themePick;applyTheme(ui.ob.theme);render()});
+  const go=(el,fn)=>{A.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel"));el.classList.add("sel");setTimeout(fn,180)};
+  A.querySelectorAll("[data-theme-pick]").forEach(b=>b.onclick=()=>{ui.ob.theme=b.dataset.themePick;applyTheme(ui.ob.theme);go(b,()=>{ui.step++;render()})});
   A.querySelectorAll("[data-pref]").forEach(b=>b.onclick=()=>{const p=b.dataset.pref,a=ui.ob.prefs;a.includes(p)?a.splice(a.indexOf(p),1):a.push(p);render()});
-  A.querySelectorAll("[data-first]").forEach(b=>b.onclick=()=>{ui.ob.first=b.dataset.first;ui.ob.custom="";render()});
-  const ci=$("#ob-custom");if(ci)ci.oninput=()=>{ui.ob.custom=ci.value;A.querySelectorAll("[data-first]").forEach(x=>x.classList.toggle("sel",!ci.value&&x.dataset.first===ui.ob.first));ci.classList.toggle("sel",!!ci.value)};
-  A.querySelectorAll("[data-tone]").forEach(b=>b.onclick=()=>{ui.ob.tone=b.dataset.tone;ui.ob.name=$("#ob-name").value;render()});
+  A.querySelectorAll("[data-first]").forEach(b=>b.onclick=()=>{ui.ob.first=b.dataset.first;ui.ob.custom="";go(b,()=>{ui.step++;render()})});
+  const ci=$("#ob-custom"),useCustom=()=>{const v=ci.value.trim();if(!v){ci.focus();return}ui.ob.custom=v;ui.step++;render()};
+  if(ci){ci.oninput=()=>{ui.ob.custom=ci.value};ci.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();useCustom()}}}
+  A.querySelectorAll("[data-act=ob-custom-go]").forEach(b=>b.onclick=e=>{e.stopImmediatePropagation();useCustom()});
+  A.querySelectorAll("[data-tone]").forEach(b=>b.onclick=()=>{ui.ob.tone=b.dataset.tone;ui.ob.name=$("#ob-name").value;go(b,finishOnb)});
   const ni=$("#ob-name");if(ni)ni.oninput=()=>ui.ob.name=ni.value;
   A.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ui.screen=b.dataset.go;render();scrollTo(0,0)});
   A.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ui.listId=b.dataset.open;ui.screen="list";render();scrollTo(0,0)});
@@ -834,6 +850,33 @@ function reviewCupom(r,raw,failed){
 
 function selectMail(){const el=$("#dev-mail");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)}
 
+/* ---------- Backup ---------- */
+function backupCode(){const d={...S};delete d.obDraft;return "CM1:"+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
+function readBackup(txt){let t=String(txt||"").trim();if(!t)return null;try{if(t.startsWith("CM1:"))t=decodeURIComponent(escape(atob(t.slice(4).replace(/\s/g,""))));const d=JSON.parse(t);return d&&Array.isArray(d.lists)?d:null}catch(e){return null}}
+function backupSheet(){
+  S.lastBackup=Date.now();save();const code=backupCode();
+  sheet(`<h2>Backup</h2><p style="color:var(--muted)">Copie o código abaixo e guarde onde quiser: WhatsApp para você mesmo, Notas ou e-mail. Para recuperar, use <b>Restaurar backup</b> e cole o código.</p>
+    <textarea id="bk-code" readonly>${esc(code)}</textarea>
+    <button class="cta alt" id="bk-copy">Copiar código</button>`,(el,close)=>{
+    const ta=el.querySelector("#bk-code");
+    el.querySelector("#bk-copy").onclick=()=>{const sel=()=>{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length)};
+      try{navigator.clipboard.writeText(code).then(()=>{toast("Backup copiado.");close()},()=>{sel();toast("Código selecionado. É só copiar.")})}catch(e){sel();toast("Código selecionado. É só copiar.")}};
+  });
+}
+function restoreSheet(fromWelcome){
+  sheet(`<h2>${fromWelcome?"Já usou antes?":"Restaurar backup"}</h2>
+    <p style="color:var(--muted)">Cole o código de backup que você copiou em Ajustes. Suas listas, preços e preferências voltam como estavam.</p>
+    <textarea id="rs-code" placeholder="Cole aqui o código (começa com CM1:)"></textarea>
+    <button class="cta alt" id="rs-go">Restaurar</button>
+    ${fromWelcome?`<button class="btn" id="rs-skip" style="align-self:center">Não tenho backup, começar agora</button>`:""}`,(el,close)=>{
+    el.querySelector("#rs-go").onclick=()=>{const d=readBackup(el.querySelector("#rs-code").value);
+      if(!d){toast("Código inválido. Confira se copiou ele inteiro.");return}
+      S=Object.assign(blank(),d,{onboarded:true});delete S.obDraft;save();applyTheme(S.theme);close();ui.screen="home";render();scrollTo(0,0);
+      toast(`Backup restaurado: ${S.lists.length} ${S.lists.length===1?"lista":"listas"}.`)};
+    const sk=el.querySelector("#rs-skip");if(sk)sk.onclick=()=>{close();finishOnb()};
+  });
+}
+
 /* ---------- Instalar no celular (PWA) ---------- */
 const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
 const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -855,6 +898,16 @@ async function doInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;render()});
 window.addEventListener("appinstalled",()=>{deferredPrompt=null;toast("App instalado na tela inicial.");render()});
 if("serviceWorker" in navigator&&!EMBED&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+idbGet(KEY).then(raw=>{
+  if(!raw)return;let d;try{d=JSON.parse(raw)}catch(e){return}
+  const cur=JSON.stringify(S);if(raw===cur)return;
+  // só recupera se aqui não há cadastro feito, ou se a cópia tem mais conteúdo
+  if(!S.onboarded&&(d.onboarded||d.obDraft)){S=Object.assign(blank(),d);try{localStorage.setItem(KEY,raw)}catch(e){}
+    applyTheme(S.onboarded?S.theme:(S.obDraft?.ob?.theme||"dark"));
+    ui.screen=S.onboarded?"home":"onb";ui.step=S.obDraft?.step||0;if(S.obDraft?.ob)ui.ob=S.obDraft.ob;render()}
+  else if(S.onboarded)idbSet(KEY,cur);
+});
 $("#cupom-file").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(f)readCupom(f)});
 
 render();

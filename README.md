@@ -9,10 +9,10 @@ App web (PWA) de lista de compras com o mascote Moranguito.
 - **Instalável no celular:** botão "Instalar" no Android; passo a passo no iPhone (Safari → Compartilhar → Adicionar à Tela de Início); funciona offline
 - Listas coloridas: digitar, colar receita ou falar a lista (voz em pt-BR)
 - "Quanto sua cesta subiu": gasto do mês, variação por produto e alerta de embalagem que encolheu
-- Dados salvos só no aparelho (localStorage)
+- Dados salvos só no aparelho (localStorage + cópia no IndexedDB), com backup por código em Ajustes
 
 Arquivos: `index.html`, `manifest.webmanifest`, `sw.js`, `icons/`. Sem build.
 
-Feito por **DomDevLabs** · domdevlabs@gmail.com · v1.6.0
+Feito por **DomDevLabs** · domdevlabs@gmail.com · v1.7.0
 
 Logo oficial em `icons/domdevlabs-logo.png`.
