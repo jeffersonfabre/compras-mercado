@@ -248,7 +248,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "1.9.0";
+const VERSION = "1.9.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -875,10 +875,13 @@ function listText(l){
   groupItems(l.items).forEach(([c,its])=>{t+=`\n_${c}_\n`+its.map(i=>`${i.done?"☑":"☐"} ${i.name}${qtyTxt(i.qty,i.unit)}`).join("\n")+"\n"});
   return t+`\nFeito com Compras Mercado`;
 }
+// "Lista de Compras - 05-11-2026 - Prezunic" (sem repetir a data quando o nome é o padrão "Mercado · dd/mm")
+function htmlTitle(l){const d=l.date||todayISO(),br=`${d.slice(8,10)}-${d.slice(5,7)}-${d.slice(0,4)}`;
+  const m=l.name.replace(/\s*·\s*\d{2}\/\d{2}\s*$/,"").trim();return `Lista de Compras - ${br}${m?` - ${m}`:""}`}
 function listHtml(l){
   const id=hashStr(l.id+l.name+(l.date||"")),e=esc;
   const groups=groupItems(l.items).map(([c,its])=>`<h2>${e(c)}</h2>`+its.map((i,k)=>{const key=e(c)+"-"+k;return `<label><input type="checkbox" id="${key}"${i.done?" checked":""}><span>${e(i.name)}</span><small>${e(qtyTxt(i.qty,i.unit).replace(/^ \(|\)$/g,""))}</small></label>`}).join("")).join("");
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(l.name)}</title><style>
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(htmlTitle(l))}</title><style>
 :root{--bg:#FFFBF7;--fg:#1A1512;--mut:#6F655E;--line:#E6DED6;--acc:#FF3D68;--card:#fff}
 @media(prefers-color-scheme:dark){:root{--bg:#0E0C0B;--fg:#F7F1EB;--mut:#A79C93;--line:#2F2925;--card:#1C1917}}
 body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
@@ -901,7 +904,7 @@ bx.forEach(function(x){if(x.id in s)x.checked=s[x.id];x.onchange=function(){s[x.
 }
 const slug=t=>norm(t).replace(/\s+/g,"-").slice(0,40)||"lista";
 async function shareHtml(l){
-  const fn=`${slug(l.name)}.html`,file=new File([listHtml(l)],fn,{type:"text/html"});
+  const fn=`${htmlTitle(l).replace(/[\\/:*?"<>|]/g,"")}.html`,file=new File([listHtml(l)],fn,{type:"text/html"});
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:l.name});return}}catch(e){if(e&&e.name==="AbortError")return}
   try{const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("Arquivo salvo. Envie pelo WhatsApp como documento.")}
   catch(e){toast("Não deu para gerar o arquivo aqui. Use o link.")}
@@ -912,7 +915,6 @@ function shareSheet(l){
   sheet(`<h2>Enviar lista</h2><p style="color:var(--muted)">${l.items.length} ${l.items.length===1?"item":"itens"}. Escolha como mandar pelo WhatsApp.</p>
     <a class="share-opt main" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener"><span class="em">🔗</span><span class="t"><b>Link para ir marcando</b>Abre a lista no navegador. Quem receber toca nos itens para marcar e pode salvar no próprio app.</span></a>
     <button class="share-opt" id="sh-html"><span class="em">📄</span><span class="t"><b>Arquivo HTML</b>Página com caixinhas para marcar. Vai como documento; abra no Safari ou no Chrome.</span></button>
-    <a class="share-opt" href="https://wa.me/?text=${encodeURIComponent(listText(l))}" target="_blank" rel="noopener"><span class="em">💬</span><span class="t"><b>Texto com ☐</b>Lista simples na conversa, separada por categoria.</span></a>
     <button class="btn" id="sh-copy" style="align-self:center">Copiar link</button>`,(el,close)=>{
     el.querySelector("#sh-html").onclick=()=>shareHtml(l);
     el.querySelector("#sh-copy").onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>toast("Link copiado."),()=>toast("Não deu para copiar aqui."))}catch(e){toast("Não deu para copiar aqui.")}};
