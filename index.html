@@ -330,6 +330,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 .lrow.white{background:#fff}
 .lrow.white .go{background:var(--lime);color:var(--ondark)}
 .mascot{width:100%;height:auto;display:block}
+.byddl{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:0;color:var(--muted);font-size:14px;text-align:center}.byddl img{width:36px;height:36px;border-radius:8px;background:#fff;object-fit:contain;padding:2px}
 .shbar{height:10px;border-radius:99px;background:rgba(0,0,0,.15);overflow:hidden;margin-top:14px}.shbar i{display:block;height:100%;background:var(--ondark);border-radius:99px}
 .sacolito{display:flex;flex-direction:column;align-items:center;gap:6px;margin:18px 0 8px}
 .sacolito .sbag{width:min(150px,38vw);animation:bob 3s ease-in-out infinite}
@@ -417,7 +418,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.12.1";
+const VERSION = "3.12.2";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1397,12 +1398,12 @@ function renderShared(){
   const n=items.filter(i=>i.done).length,pct=items.length?Math.round(n/items.length*100):0;
   const em=c=>(plan.find(x=>x.name===c)||DEFAULT_PLAN.find(x=>x.name===c)||{}).em||"🛍️";
   return `<div class="screen">
-    <div class="lhd"><div class="row" style="align-items:center;gap:12px"><div style="width:64px;flex:none">${MASCOT}</div><div style="min-width:0"><span class="sub" style="font-weight:700;letter-spacing:.12em;font-size:12px">LISTA RECEBIDA</span><h2>${esc(d.n)}</h2>${d.d?`<div class="sub">${fmtLong(d.d)}</div>`:""}</div></div>
+    <div class="lhd"><div class="row" style="align-items:center;gap:12px"><div style="width:64px;flex:none">${MASCOT}</div><div style="min-width:0"><span class="sub" style="font-weight:700;letter-spacing:.12em;font-size:12px">LISTA RECEBIDA</span><h2>${esc(d.n)}</h2>${d.d?`<div class="sub" style="text-align:left;margin:0">${fmtLong(d.d)}</div>`:""}</div></div>
       <div class="shbar"><i style="width:${pct}%"></i></div><div class="sub" style="font-weight:700">${n} de ${items.length} no carrinho${n===items.length&&n?" · tudo pronto! 🎉":""}</div></div>
     ${groupItems(items).map(([c,its])=>`<p class="csec">${em(c)} ${esc(c)}</p><ul class="items">${its.map(i=>{const ql=fmtQty(i.qty,i.unit);return `<li class="ipill ${i.done?"done":""}"><button class="ck" data-shk="${i.j}" aria-pressed="${!!i.done}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?ic("check",22):""}</button><button class="nm" data-shk="${i.j}">${esc(i.name)}${ql?`<small>${esc(ql)}</small>`:""}</button></li>`}).join("")}</ul>`).join("")}
     <button class="cta alt" data-act="sh-save" style="margin-top:8px">Salvar nas minhas listas</button>
     ${S.onboarded?`<button class="link" data-act="sh-close" style="align-self:center">Abrir meu app</button>`:""}
-    <p class="hint" style="text-align:center;margin:0">Feito com Compras Mercado · DomDevLabs</p></div>`;
+    <p class="byddl">Feito com Compras Mercado · <img src="icons/domdevlabs-logo.png" alt="" onerror="this.onerror=null;this.src=DDL_FALLBACK"> <b>DomDevLabs</b></p></div>`;
 }
 function bindShared(A){
   A.querySelectorAll("[data-shk]").forEach(b=>b.onclick=()=>{const st=shState(),j=+b.dataset.shk,cur=j in st?st[j]:!!ui.shared.i[j][4];st[j]=!cur;
