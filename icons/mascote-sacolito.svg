@@ -7,18 +7,18 @@
     <path d="M74 80 Q72 40 92 26 Q98 52 90 80 Z" fill="#2E9E47"/>
   </g>
   <!-- alças -->
-  <path d="M68 86 Q68 52 100 52 Q132 52 132 86" fill="none" stroke="#0B0B0B" stroke-width="15" stroke-linecap="round"/><path d="M68 86 Q68 52 100 52 Q132 52 132 86" fill="none" stroke="#8FCB1F" stroke-width="7" stroke-linecap="round"/>
+  <path d="M68 86 Q68 52 100 52 Q132 52 132 86" fill="none" stroke="#0B0B0B" stroke-width="15" stroke-linecap="round"/><path d="M68 86 Q68 52 100 52 Q132 52 132 86" fill="none" stroke="#E06A00" stroke-width="7" stroke-linecap="round"/>
   <!-- corpo -->
-  <path d="M38 80 H162 Q168 80 168 87 L176 196 Q177 210 162 210 H38 Q23 210 24 196 L32 87 Q32 80 38 80 Z" fill="#B6F23A" stroke="#0B0B0B" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M38 80 H162 Q168 80 168 87 L176 196 Q177 210 162 210 H38 Q23 210 24 196 L32 87 Q32 80 38 80 Z" fill="#FF8A1F" stroke="#0B0B0B" stroke-width="6" stroke-linejoin="round"/>
   <!-- dobra -->
-  <path d="M33 86 H167 L168.5 104 H31.5 Z" fill="#8FCB1F"/>
+  <path d="M33 86 H167 L168.5 104 H31.5 Z" fill="#E06A00"/>
   <path d="M31.5 104 H168.5" stroke="#0B0B0B" stroke-width="5"/>
   <!-- rosto -->
   <ellipse cx="78" cy="140" rx="10" ry="13" fill="#0B0B0B"/>
   <ellipse cx="122" cy="140" rx="10" ry="13" fill="#0B0B0B"/>
   <circle cx="81.5" cy="135" r="3.6" fill="#fff"/>
   <circle cx="125.5" cy="135" r="3.6" fill="#fff"/>
-  <ellipse cx="60" cy="163" rx="10" ry="6" fill="#FF8A8A" opacity=".8"/>
-  <ellipse cx="140" cy="163" rx="10" ry="6" fill="#FF8A8A" opacity=".8"/>
+  <ellipse cx="60" cy="163" rx="10" ry="6" fill="#E8473A" opacity=".55"/>
+  <ellipse cx="140" cy="163" rx="10" ry="6" fill="#E8473A" opacity=".55"/>
   <path d="M86 164 Q100 180 114 164" fill="none" stroke="#0B0B0B" stroke-width="6" stroke-linecap="round"/>
 </svg>
