@@ -418,7 +418,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.12.3";
+const VERSION = "3.13.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -677,7 +677,7 @@ function renderList(){
         ${tot?`<div class="prev"><small>${l.closed?"TOTAL":"PRÉVIA"}</small><b>${brl(tot)}</b></div>`:""}</div>
       ${l.closed?`<div class="quick"><button data-act="reuse">🔁 Usar de novo hoje</button><button data-act="reopen">Reabrir</button></div>`
       :`<div class="addbar"><span class="tagic">${ic("tag",20)}</span><input id="add-txt" placeholder="Adicionar… ex.: 2 leite" aria-label="Adicionar item" enterkeyhint="done" autocomplete="off"><button class="plus" data-act="add" aria-label="Adicionar">${ic("plus",24)}</button></div>
-      <div class="quick"><button data-act="mic">${ic("mic",20)} Falar</button><button data-act="paste-list">${ic("spark",20)} Colar lista</button><button data-act="from-rel">${ic("lists",20)} Da relação</button></div>`}</div>
+      <div class="quick"><button data-act="mic">${ic("mic",20)} Falar</button><button data-act="paste-list">${ic("spark",20)} Colar lista</button><button data-act="from-rel">${ic("pencil",20)} Editar itens</button></div>`}</div>
     ${l.items.length?groups:`<div class="empty"><p>Lista vazia. Adicione itens no campo acima.</p></div>`}
     ${tabs("lists")}</div>`;
 }
@@ -949,7 +949,10 @@ function bind(){
     else if(a==="nota-paste")reviewCupom({items:[],store:ui.cupomStore||"",date:"",total:0},"",false);
     else if(a==="hist-manual")manualPurchase();
     else if(a==="paste-list")pasteSheet(l);
-    else if(a==="from-rel"){ui.pick={date:todayISO(),name:"",sel:{},qty:{},extra:[],month:false,addTo:l.id};ui.screen="pick";render();scrollTo(0,0)}
+    else if(a==="from-rel"){const R=relation(),sel={},qty={};
+      l.items.forEach(i=>{const h=R.find(x=>norm(x.name)===norm(i.name));const k=(h?h.cat:(i.cat||"Outros"))+"|"+(h?h.name:i.name);sel[k]=i.unit||"un";qty[k]=i.qty||1});
+      const open={};Object.keys(sel).forEach(k=>open[k.slice(0,k.indexOf("|"))]=true);
+      ui.pick={date:l.date||todayISO(),name:"",sel,qty,extra:[],month:false,addTo:l.id,editList:true,open};ui.screen="pick";render();scrollTo(0,0)}
     else if(a==="pk-meta"){ui.pick.showMeta=true;const y=scrollY;render();scrollTo(0,y)}
     else if(a==="tip-ok"){S.tips={...(S.tips||{}),[b.dataset.tip]:1};save();const y=scrollY;render();scrollTo(0,y)}
     else if(a==="budget-toggle"){S.budgetOn=!S.budgetOn;save();const y=scrollY;render();scrollTo(0,y)}
@@ -1030,19 +1033,20 @@ const defName=iso=>`Mercado · ${fmtD(iso)}`;
 function relation(){
   const base=monthItems(1,true).map(i=>({cat:i.cat,name:i.name,unit:i.unit}));
   const seen=new Set(base.map(i=>norm(i.name)));
-  S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);if(!seen.has(k)){seen.add(k);base.push({cat:"Já usados nas suas listas",name:i.name,unit:i.unit||"un"})}}));
+  const pc=new Set(getPlan().map(c=>c.name));
+  S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);if(!seen.has(k)){seen.add(k);base.push({cat:pc.has(i.cat)?i.cat:"Já usados nas suas listas",name:i.name,unit:i.unit||"un"})}}));
   (ui.pick?.extra||[]).forEach(n=>{if(!seen.has(norm(n))){seen.add(norm(n));base.push({cat:"Outros",name:n,unit:"un"})}});
   return base;
 }
 function pickEst(pk){return Object.keys(pk.sel).reduce((a,k)=>{const nm=k.slice(k.indexOf("|")+1),u=estUnit(nm);return a+(u!=null?u*(pk.qty?.[k]||1):0)},0)}
-function pickLabel(pk){const n=Object.keys(pk.sel).length;if(!n)return "Escolha os itens";const e=pickEst(pk);return `${pk.addTo?"Incluir":"Criar lista com"} ${n} ${n>1?"itens":"item"}${e?` · ~${brl(e)}`:""}`}
+function pickLabel(pk){const n=Object.keys(pk.sel).length;if(pk.editList){const e=pickEst(pk);return n?`Salvar lista · ${n} ${n>1?"itens":"item"}${e?` · ~${brl(e)}`:""}`:"Salvar lista vazia"}if(!n)return "Escolha os itens";const e=pickEst(pk);return `${pk.addTo?"Incluir":"Criar lista com"} ${n} ${n>1?"itens":"item"}${e?` · ~${brl(e)}`:""}`}
 function renderPick(){
   const pk=ui.pick,R=relation(),plan=getPlan(),cats=[...new Set(R.map(i=>i.cat))],n=Object.keys(pk.sel).length;pk.open=pk.open||{};
   const chip=(c,i)=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`};
   const freq={};S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);freq[k]=(freq[k]||0)+1}));
   const seen=new Set(),top=R.filter(i=>freq[norm(i.name)]&&!seen.has(norm(i.name))&&seen.add(norm(i.name))).sort((a,b)=>freq[norm(b.name)]-freq[norm(a.name)]).slice(0,12);
   const cnt=c=>Object.keys(pk.sel).filter(k=>k.startsWith(c+"|")).length;
-  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><h2 style="font-size:22px">${pk.addTo?"Incluir itens":"Nova lista"}</h2><span style="width:44px"></span></div>
+  return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="${pk.addTo?"list":"home"}" aria-label="Voltar">‹</button><h2 style="font-size:22px">${pk.editList?"Editar itens":pk.addTo?"Incluir itens":"Nova lista"}</h2><span style="width:44px"></span></div>
     ${tipBox("pick","Toque nos itens que vai comprar. Use a busca para achar rápido ou incluir um item novo.")}
     <div class="pkmeta">${pk.showMeta?`<div class="grid2" style="flex:1"><label class="field">Data<input id="pk-date" type="date" value="${pk.date}"></label><label class="field">Nome<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>`
       :`<span>📅 ${pk.date===todayISO()?"Hoje":fmtD(pk.date)} · ${esc(pk.name||defName(pk.date))} · 📍 ${S.uf||DEFAULT_UF}</span><button class="link" data-act="pk-meta">mudar</button>`}</div>
@@ -1062,11 +1066,11 @@ function renderPick(){
     </div>
     <button class="btn ${pk.month?"":"dark"}" data-act="pick-month">${pk.month?"✕ Desmarcar a compra do mês":"📅 Marcar a compra do mês"}</button>
     <button class="link" data-act="plan-open" data-from="pick" style="align-self:center">🗂️ Editar itens e categorias</button>
-    <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n?"":"disabled"}>${pickLabel(pk)}</button></div></div>`;
+    <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n||pk.editList?"":"disabled"}>${pickLabel(pk)}</button></div></div>`;
 }
 function bindPick(A){
   const pk=ui.pick;pk.open=pk.open||{};pk.qty=pk.qty||{};
-  const upd=()=>{const n=Object.keys(pk.sel).length,b=A.querySelector("[data-act=pick-go]");b.disabled=!n;b.textContent=pickLabel(pk)};
+  const upd=()=>{const n=Object.keys(pk.sel).length,b=A.querySelector("[data-act=pick-go]");b.disabled=!n&&!pk.editList;b.textContent=pickLabel(pk)};
   const counts=()=>A.querySelectorAll(".pkg[data-cat]").forEach(g=>{const c=g.dataset.cat,m=Object.keys(pk.sel).filter(k=>k.startsWith(c+"|")).length,el=g.querySelector(".pkn");if(el)el.textContent=m?m+" ✓":""});
   const set=(k,u,on)=>{if(on)pk.sel[k]=u||"un";else{delete pk.sel[k];delete pk.qty[k]}
     A.querySelectorAll(".chip.pk").forEach(c=>{if(c.dataset.k===k){c.classList.toggle("on",on);c.setAttribute("aria-pressed",on)}});counts()};
@@ -1121,6 +1125,13 @@ function pickMonth(){
 function createPicked(){
   const pk=ui.pick;
   const items=Object.entries(pk.sel).map(([k,u])=>{const i=k.indexOf("|"),cat=k.slice(0,i),name=k.slice(i+1);return{id:uid(),name,cat,unit:u||"un",qty:pk.qty?.[k]||1,price:lastPrice(name),size:null,done:false}});
+  if(pk.editList){const tl=S.lists.find(x=>x.id===pk.addTo);if(tl){
+    const want=new Map(items.map(i=>[norm(i.name),i]));const before=tl.items.length;
+    tl.items=tl.items.filter(i=>want.has(norm(i.name)));const removed=before-tl.items.length;
+    tl.items.forEach(i=>{const w=want.get(norm(i.name));if(w){i.qty=w.qty;i.unit=w.unit}});
+    const have=new Set(tl.items.map(i=>norm(i.name)));const add=items.filter(i=>!have.has(norm(i.name)));tl.items.push(...add);
+    ui.pick=null;save();ui.listId=tl.id;ui.screen="list";render();scrollTo(0,0);
+    toast([add.length?`${add.length} ${add.length===1?"incluído":"incluídos"}`:"",removed?`${removed} ${removed===1?"retirado":"retirados"}`:""].filter(Boolean).join(" · ")||"Lista sem mudanças.");return}}
   if(!items.length)return;
   if(pk.addTo){const tl=S.lists.find(x=>x.id===pk.addTo);if(tl){const have=new Set(tl.items.map(i=>norm(i.name)));const add=items.filter(i=>!have.has(norm(i.name)));tl.items.push(...add);
     ui.pick=null;save();ui.listId=tl.id;ui.screen="list";render();scrollTo(0,0);toast(`${add.length} ${add.length===1?"item incluído":"itens incluídos"}.`);return}}
