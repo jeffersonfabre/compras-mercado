@@ -198,6 +198,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .rv-q{grid-column:2;display:grid;grid-template-columns:78px 68px minmax(0,1fr) auto;gap:8px;align-items:end}
 .rv-q label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:0}
 .rv select{height:42px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 6px;font-size:15px;color:var(--fg);width:100%}
+.rv-n{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);margin-bottom:-2px}.rv-n b{color:var(--lime)}
 .rv-tot{font-weight:800;white-space:nowrap;padding-bottom:10px;font-variant-numeric:tabular-nums}
 .rvh{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .rv{padding:10px 0;border-bottom:1px solid var(--line)}
@@ -416,7 +417,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.11.1";
+const VERSION = "3.12.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1170,7 +1171,7 @@ function sizeOf(name){const m=String(name).match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l
 /* ---------- Cupom fiscal ---------- */
 function num(s){return parseFloat(String(s).replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",","."))}
 const SKIP=/TOTAL|PAGAR|SUBTOTAL|DESCONTO|ACRESC|TROCO|DINHEIRO|CART[AÃ]O|CR[EÉ]DITO|D[EÉ]BITO|\bPIX\b|CNPJ|CPF|TRIBUT|ICMS|IMPOSTO|DESCRI[CÇ]|C[OÓ]DIGO|CHAVE|PROTOCOLO|CONSULT|S[EÉ]RIE|EMISS|VALOR PAGO|FORMA|ITENS|LEI 12|ENDERE|TELEFONE|\bIE\b/i;
-const ABBR={qjo:"queijo",bisc:"biscoito",refrig:"refrigerante",choc:"chocolate",muss:"mussarela",hussarela:"mussarela",mussarela:"mussarela",iog:"iogurte",ferm:"fermentado",hexerica:"mexerica",req:"requeijão",lte:"leite",sab:"sabonete",deterg:"detergente",desinf:"desinfetante",amac:"amaciante",cx:"caixa",pct:"pacote",tp:"tipo",integ:"integral",cong:"congelado",frgo:"frango",fgo:"frango",bov:"bovino",cerv:"cerveja",manteig:"manteiga",marg:"margarina",refri:"refrigerante",lche:"lanche"};
+const ABBR={qjo:"queijo",bisc:"biscoito",refrig:"refrigerante",choc:"chocolate",muss:"mussarela",hussarela:"mussarela",mussarela:"mussarela",iog:"iogurte",ferm:"fermentado",hexerica:"mexerica",req:"requeijão",lte:"leite",sab:"sabonete",deterg:"detergente",desinf:"desinfetante",amac:"amaciante",cx:"caixa",pct:"pacote",tp:"tipo",integ:"integral",cong:"congelado",frgo:"frango",fgo:"frango",bov:"bovino",cerv:"cerveja",manteig:"manteiga",marg:"margarina",refri:"refrigerante",lche:"lanche",bco:"branco",sear:"Seara",nicroond:"micro-ondas",microond:"micro-ondas",socia:"social",socita:"social",lig:"líquido",lio:"líquido",liq:"líquido",uit:"vit.",dancne:"danone",chanyto:"chamyto",plast:"plástica",hussarela:"mussarela"};
 function cleanName(s){
   s=String(s).replace(/[—–]/g," ");
   const m=s.match(/(?:^|\s)(?:\d{1,3}\s+[A-Z]?\d{4,14}|0\d{2}\d{4,14})\s+(?=\S)/i); // nº do item + código do produto
@@ -1193,7 +1194,7 @@ function findDate(text){
 const CHAINS=["Prezunic","Guanabara","Assaí Atacadista","Assaí","Mundial","Zona Sul","Supermarket","Carrefour","Pão de Açúcar","Extra","Inter","Atacadão","Sendas","Super Prix","Princesa","Costazul","Hortifruti","Supermercados Unidos","Rede Economia","Bramil","Royal","Dia","Mercadinho São José","Grupo Mateus","Bretas","Big Box","Oba","Hirota","Natural da Terra","Sonda","Dalben","Savegnago","Tauste","Muffato","Condor","Angeloni","Bistek","Comper","Fort Atacadista","Makro","Sam's Club","Spani","Tenda","BH","Epa","Verdemar"];
 function goodName(t){t=String(t||"").trim();if(t.replace(/[^A-Za-zÀ-ú]/g,"").length<4)return false;const w=t.split(/\s+/).filter(x=>x.length>1);if(!w.length)return false;
   const bad=w.filter(x=>!/[aeiouyáéíóúãõâêô]/i.test(x)||/\d/.test(x)||/["'`|_~]/.test(x)).length;return bad/w.length<=0.2}
-function tidyName(t){return String(t).replace(/\b(LTDA|EIRELI|EPP|ME|S\/?A|CIA|COMERCIO DE ALIMENTOS|COM\.?\s*DE\s*ALIM\w*)\b\.?/gi,"").replace(/[^\wÀ-ú&' .-]/g," ").replace(/\s+/g," ").trim()
+function tidyName(t){return String(t).replace(/\bNERCAD/gi,"MERCAD").replace(/^[^A-Za-z]*(?:[A-Za-zÀ-ú]\s+)*(?=[A-Za-zÀ-ú]{2})/,"").replace(/\b(LTDA|EIRELI|EPP|ME|S\/?A|CIA|COMERCIO DE ALIMENTOS|COM\.?\s*DE\s*ALIM\w*)\b\.?/gi,"").replace(/[^\wÀ-ú&' .-]/g," ").replace(/\s+/g," ").trim()
   .toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).slice(0,40)}
 function detectStore(text,lines){
   const t=" "+norm(text)+" ";for(const c of CHAINS){if(t.includes(" "+norm(c)+" "))return c}
@@ -1201,16 +1202,54 @@ function detectStore(text,lines){
   for(const l of cand){const n=tidyName(l);if(goodName(n))return n}
   return "";
 }
+// Leitor do DANFE NFC-e: "001 7891234567890 PRODUTO 2UNx3,99 T20,00% 7,98"
+function lev(a,b){if(a===b)return 0;const m=a.length,n=b.length;if(!m||!n)return m||n;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+const pn=t=>{t=String(t).replace(/\]/g,"1").replace(/\//g,"7").replace(/\)/g,"9").replace(/[^\d,.]/g,"");const m=t.match(/(\d{1,4}(?:\.\d{3})*)[.,](\d{1,2})$/);if(!m)return NaN;return parseFloat(m[1].replace(/\./g,"")+"."+(m[2].length===1?m[2]+"0":m[2]))};
+function parseNFCe(text){
+  const fixQ=l=>l
+    .replace(/(^|\s)[IJTÍÌ\[|l]?UN(?=[\sx×]|$)/g,"$11UN").replace(/(\d)0N(?=[\sx×]|$)/g,"$1UN")
+    .replace(/(\d[.,]\d{2})([a-z])K/gi,(m,a,b)=>a+(b==="b"?"6":b==="o"||b==="O"?"0":"")+"K")
+    .replace(/(\d)\s*K[G6]\s*[x×*4]?\s*(?=\d{1,3}[.,]\d{2})/gi,"$1KGx").replace(/K[G6]\b/gi,"KG");
+  const raw=String(text).split(/\r?\n/);const items=[];let last=null,seq=0;
+  for(let l0 of raw){
+    let l=fixQ(l0.replace(/\s+/g," ").trim());if(!l)continue;
+    const dsc=l.match(/desconto\s+item\s*(\S+)?\s+[«"“\-–]?\s*(\d+[.,]\d{1,2}\S?)/i);
+    if(dsc){const it=items.find(x=>x.nums.includes(dsc[1]))||last;if(it)it.disc=(it.disc||0)+(pn(dsc[2])||0);continue}
+    // quantidade + unidade [x preço unitário]
+    const q=l.match(/(\d+(?:[.,]\d{1,3})?)\s*(UN|KG)(?![A-WYZa-wyz])\s*(?:[x×]\s*(\d{1,4}[.,]\d{2}))?/i);if(!q)continue;
+    // nº do item e código no começo
+    const head=l.slice(0,q.index).trim();
+    const hm=head.match(/(?:^|\s)([0-9A-Za-z]{1,3})\s+[\[\(]?(\d[\d\[\(\)]{3,14})\s+(.+)$/);if(!hm)continue;
+    let name=hm[3].trim();if((name.match(/[A-Za-zÀ-ú]/g)||[]).length<3)continue;
+    const tail=l.slice(q.index+q[0].length);const tm=tail.match(/(\d{1,4}(?:\.\d{3})*[.,]\d[\d\]\/\)]?)\s*\S?$/);
+    const vl=tm?pn(tm[1]):NaN;const kg=/KG/i.test(q[2]);let qty=parseFloat(q[1].replace(",","."));
+    let n=hm[1].replace(/[Oo]/g,"0").replace(/[IlJ]/g,"1");n=/^\d{3}$/.test(n)&&+n===seq+1||/^\d{3}$/.test(n)&&+n>seq&&+n<seq+4?n:String(seq+1).padStart(3,"0");seq=+n;
+    let unitP=q[3]?pn(q[3]):NaN;
+    if(!(qty>0))qty=1;if(!kg)qty=Math.max(1,Math.round(qty));
+    if(isNaN(unitP))unitP=!isNaN(vl)?Math.round(vl/qty*100)/100:NaN;
+    if(isNaN(unitP)||unitP<=0)continue;
+    const total=!isNaN(vl)?vl:Math.round(unitP*qty*100)/100;
+    last={nums:[n],code:hm[2].replace(/\D/g,""),rawName:name,qty,unit:kg?"kg":"un",price:unitP,total};items.push(last);
+  }
+  // junta o mesmo produto (mesmo código ou nome parecido) mostrando os números dos itens
+  const out=[];items.forEach(it=>{const k=it.rawName.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    const o=out.find(x=>x.unit===it.unit&&(x.code===it.code&&it.code.length>=8||lev(x.key,k)<=Math.max(1,Math.floor(k.length/8))));
+    if(o){o.nums.push(...it.nums);o.prices.push(it.price);o.price=o.prices.slice().sort((a,b)=>o.prices.filter(v=>v===b).length-o.prices.filter(v=>v===a).length)[0];o.qty=Math.round((o.qty+it.qty)*1000)/1000;o.total=Math.round((o.total+it.total)*100)/100;o.disc=(o.disc||0)+(it.disc||0)}
+    else out.push({...it,key:k,prices:[it.price]})});
+  return out;
+}
 function parseCupom(text){
   const fix=l=>l.replace(/\b[A-Z]?\s?\d{1,2}[.,]\d{2}\s?%/gi," ").replace(/(\d[.,]\d{3})\s*[kK]\s*[6gGqQ9]?(?![A-Za-z])/g,"$1 KG ").replace(/(\d)\s*u[nm]d?\b/gi,"$1 UN ");
   const lines=String(text).split(/\r?\n/).map(l=>fix(l).replace(/\s+/g," ").trim()).filter(l=>l.length>1);
   const out={items:[],store:"",date:"",total:0};
   out.date=findDate(text);
   out.store=detectStore(text,lines);
-  const tm=text.match(/(?:VALOR\s*(?:A\s*)?PAGAR|VALOR\s*TOTAL|TOTAL)[^\d\n]{0,20}(\d{1,3}(?:\.\d{3})*,\d{2})/i);if(tm)out.total=num(tm[1]);
+  const tm=text.match(/VALOR\s*[AÀ]?\s*PAGAR[^\d\n]{0,20}(\d{1,3}(?:\.\d{3})*,\d{2})/i)||text.match(/(?:VALOR\s*TOTAL|TOTAL)[^\d\n]{0,20}(\d{1,3}(?:\.\d{3})*,\d{2})/i);if(tm)out.total=num(tm[1]);
   const reQ=/(\d+(?:[.,]\d{1,3})?)\s*(UN|UND|UNID|KG|PC|PCT|CX|LT|L|G|DZ|FD|BD|SC)?\.?\s*[xX×*]\s*(\d{1,4}[.,]\d{2,3})(?:\s*[A-Z]?\s+(\d{1,4}(?:\.\d{3})*[.,]\d{2}))?/i;
   const reEnd=/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})\s*[A-Z]?\s*$/;
   const L=s=>(String(s).match(/[A-Za-zÀ-ú]/g)||[]).length;
+  const nf=parseNFCe(text);
+  if(nf.length>=2){out.items=nf.map(x=>({name:cleanName(x.rawName),nums:x.nums,qty:x.qty,unit:x.unit,price:x.price,total:Math.round(x.price*x.qty*100)/100,skip:/SACOLA/i.test(x.rawName)}));return out}
   let pend=null;
   for(const l of lines){
     if(SKIP.test(l)){pend=null;continue}
@@ -1254,12 +1293,13 @@ function readCupom(file){
       msg.textContent="Carregando o leitor (demora só na primeira vez)";bar.style.width="15%";
       await loadScript(TESS);
       const worker=await Tesseract.createWorker("por",1,{logger:m=>{if(m.status==="recognizing text"){msg.textContent="Lendo os itens";bar.style.width=Math.round(20+m.progress*80)+"%"}}});
+      try{await worker.setParameters({tessedit_pageseg_mode:"6",preserve_interword_spaces:"1"})}catch(e){}
       const {data}=await worker.recognize(canvas);await worker.terminate();
       close();reviewCupom(parseCupom(data.text),data.text,false);
     }catch(e){close();reviewCupom({items:[],store:"",date:"",total:0},"",true)}
   });
 }
-function rowsHtml(items){return items.length?items.map((it,i)=>{const kg=it.unit==="kg";return `<div class="rv" data-i="${i}"><input type="checkbox" checked aria-label="Salvar este item"><input type="text" class="rv-nm" value="${esc(it.name)}" aria-label="Produto">
+function rowsHtml(items){return items.length?items.map((it,i)=>{const kg=it.unit==="kg";return `<div class="rv" data-i="${i}">${it.nums?`<span class="rv-n">Item ${it.nums.join(" · ")}${it.nums.length>1?` <b>(${it.nums.length}x na nota)</b>`:""}</span>`:""}<input type="checkbox" ${it.skip?"":"checked"} aria-label="Salvar este item"><input type="text" class="rv-nm" value="${esc(it.name)}" aria-label="Produto">
   <div class="rv-q"><label>Qtd<input type="number" class="rv-qt" inputmode="decimal" step="any" min="0" value="${kg?it.qty:Math.round(it.qty||1)}"></label><label>Medida<select class="rv-un"><option value="un"${kg?"":" selected"}>un</option><option value="kg"${kg?" selected":""}>kg</option></select></label>
   <label><span class="rv-pl">${kg?"R$ do kg":"R$ unit."}</span><input type="number" class="rv-pr" inputmode="decimal" step="0.01" min="0" value="${(+it.price||0).toFixed(2)}"></label><span class="rv-tot">${brl((+it.price||0)*(+it.qty||1))}</span></div></div>`}).join(""):""}
 function bindRows(el){el.querySelectorAll(".rv").forEach(d=>{const q=d.querySelector(".rv-qt"),u=d.querySelector(".rv-un"),p=d.querySelector(".rv-pr"),t=d.querySelector(".rv-tot"),pl=d.querySelector(".rv-pl");
@@ -1267,7 +1307,7 @@ function bindRows(el){el.querySelectorAll(".rv").forEach(d=>{const q=d.querySele
 function reviewCupom(r,raw,failed){
   const today=todayISO(),tls=S.lists.filter(x=>(ui.cupomLists||[]).includes(x.id)&&!x.closed),tl=tls[0];
   const head=failed?`<div class="alert">Não consegui ler a foto aqui. Tente outra foto ou cole o texto do cupom abaixo.</div>`
-    :r.items.length?`<p style="color:var(--muted)">Achei ${r.items.length} itens. Corrija o que a leitura errou e desmarque o que não quer salvar.</p>`
+    :r.items.length?`<p style="color:var(--muted)">Achei ${r.items.length} produtos${r.items.some(x=>x.nums)?` (${r.items.reduce((a,x)=>a+(x.nums?.length||1),0)} itens da nota, repetidos juntos)`:""}. Confira os nomes e preços e desmarque o que não quer salvar.</p>`
     :`<div class="alert">Não achei itens nessa foto. Tente uma mais reta e iluminada, ou cole o texto do cupom.</div>`;
   sheet(`<h2>Confira os preços</h2>${head}
     <div class="grid2"><label class="field">Mercado (confira)<input id="r-store" value="${esc(ui.cupomStore||r.store||"")}" placeholder="Nome do mercado, ex.: Prezunic"></label>
