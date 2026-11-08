@@ -194,10 +194,14 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;line-height:1.45}
 .prog{height:10px;background:var(--surface);border-radius:99px;overflow:hidden}
 .prog i{display:block;height:100%;width:4%;background:var(--tomato);transition:width .2s}
-.rvh,.rv{display:grid;grid-template-columns:26px minmax(0,1fr) 92px;gap:8px;align-items:center}
+.rv{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px 10px;align-items:center}
+.rv-q{grid-column:2;display:grid;grid-template-columns:78px 68px minmax(0,1fr) auto;gap:8px;align-items:end}
+.rv-q label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:0}
+.rv select{height:42px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 6px;font-size:15px;color:var(--fg);width:100%}
+.rv-tot{font-weight:800;white-space:nowrap;padding-bottom:10px;font-variant-numeric:tabular-nums}
 .rvh{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.rv{padding:6px 0;border-bottom:1px solid var(--line)}
-.rv input[type=text],.rv input[type=number]{height:42px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 10px;font-size:15px;color:var(--fg);min-width:0;width:100%}
+.rv{padding:10px 0;border-bottom:1px solid var(--line)}
+.rv input[type=text],.rv input[type=number]{height:42px;border-radius:12px;border:2px solid var(--line);background:var(--card);padding:0 8px;font-size:15px;color:var(--fg);min-width:0;width:100%}
 .rv input[type=checkbox]{width:22px;height:22px;accent-color:var(--tomato)}
 .sheet textarea{border-radius:16px;border:2px solid var(--line);background:var(--card);padding:12px;min-height:130px;width:100%;font:inherit;color:var(--fg);resize:vertical}
 .sheet p{margin:0;line-height:1.45}
@@ -412,7 +416,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.10.0";
+const VERSION = "3.11.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1166,9 +1170,25 @@ function sizeOf(name){const m=String(name).match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l
 /* ---------- Cupom fiscal ---------- */
 function num(s){return parseFloat(String(s).replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",","."))}
 const SKIP=/TOTAL|PAGAR|SUBTOTAL|DESCONTO|ACRESC|TROCO|DINHEIRO|CART[AÃ]O|CR[EÉ]DITO|D[EÉ]BITO|\bPIX\b|CNPJ|CPF|TRIBUT|ICMS|IMPOSTO|DESCRI[CÇ]|C[OÓ]DIGO|CHAVE|PROTOCOLO|CONSULT|S[EÉ]RIE|EMISS|VALOR PAGO|FORMA|ITENS|LEI 12|ENDERE|TELEFONE|\bIE\b/i;
+const ABBR={qjo:"queijo",bisc:"biscoito",refrig:"refrigerante",choc:"chocolate",muss:"mussarela",hussarela:"mussarela",mussarela:"mussarela",iog:"iogurte",ferm:"fermentado",hexerica:"mexerica",req:"requeijão",lte:"leite",sab:"sabonete",deterg:"detergente",desinf:"desinfetante",amac:"amaciante",cx:"caixa",pct:"pacote",tp:"tipo",integ:"integral",cong:"congelado",frgo:"frango",fgo:"frango",bov:"bovino",cerv:"cerveja",manteig:"manteiga",marg:"margarina",refri:"refrigerante",lche:"lanche"};
 function cleanName(s){
-  s=s.replace(/^\s*\d{1,3}\s+/,"").replace(/^\d{6,14}\s+/,"").replace(/\s+[A-Z]?\d{2}\s*$/,"").replace(/[|_~*"'#]+/g," ").replace(/\s+/g," ").trim();
-  return s.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/(\d)(kg|g|ml|lt|l)\b/gi,(m,a,b)=>a+({l:"L",lt:"L"}[b.toLowerCase()]||b.toLowerCase()));
+  s=String(s).replace(/[—–]/g," ");
+  const m=s.match(/(?:^|\s)\d{1,3}\s+[A-Z]?\d{4,14}\s+(?=\S)/i); // nº do item + código do produto
+  if(m)s=s.slice(m.index+m[0].length);else s=s.replace(/^\s*\d{1,3}\s+/,"").replace(/^\d{4,14}\s+/,"");
+  s=s.replace(/^\s*L\.?\s+(FERM|COND|UHT|INTEG|DESN|PO\b)/i,"Leite $1").replace(/[|_~*"'#()\[\]{}+=<>]+/g," ").replace(/\s+/g," ").trim();
+  let w=s.split(" ");while(w.length>1&&!/[A-Za-zÀ-ú]{2}/.test(w[0]))w.shift(); // lixo no começo
+  while(w.length>1&&(/^(KG|UN|UND|UNID|PC|PCT|CX|LT|FD|BD|SC)$/i.test(w[w.length-1])||/^[A-Z]?\d{1,3}[A-Z]?$/i.test(w[w.length-1])&&!/\d(kg|g|ml|l)$/i.test(w[w.length-1])))w.pop();
+  s=w.map(x=>ABBR[x.toLowerCase().replace(/\.$/,"")]||x).join(" ");
+  return s.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/(\d)(kg|g|ml|lt|l)\b/gi,(m,a,b)=>a+({l:"L",lt:"L"}[b.toLowerCase()]||b.toLowerCase())).slice(0,48);
+}
+function findDate(text){
+  const now=new Date(),lines=String(text).split(/\r?\n/);let best=null,bestScore=-1;
+  lines.forEach(l=>{for(const m of l.matchAll(/(\d{2})\s?[\/.\-]\s?(\d{2})\s?[\/.\-]\s?(20\d{2}|\d{2})(?!\d)/g)){
+    const d=+m[1],mo=+m[2],y=m[3].length===2?2000+ +m[3]:+m[3];if(d<1||d>31||mo<1||mo>12||y<2015)continue;
+    const dt=new Date(y,mo-1,d);if(dt-now>864e5)continue;
+    const sc=(/EMISS|DATA|HORA|\d{2}:\d{2}/i.test(l)?10:0)+(dt/1e13);
+    if(sc>bestScore){bestScore=sc;best=`${y}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`}}});
+  return best||"";
 }
 const CHAINS=["Prezunic","Guanabara","Assaí Atacadista","Assaí","Mundial","Zona Sul","Supermarket","Carrefour","Pão de Açúcar","Extra","Inter","Atacadão","Sendas","Super Prix","Princesa","Costazul","Hortifruti","Supermercados Unidos","Rede Economia","Bramil","Royal","Dia","Mercadinho São José","Grupo Mateus","Bretas","Big Box","Oba","Hirota","Natural da Terra","Sonda","Dalben","Savegnago","Tauste","Muffato","Condor","Angeloni","Bistek","Comper","Fort Atacadista","Makro","Sam's Club","Spani","Tenda","BH","Epa","Verdemar"];
 function goodName(t){t=String(t||"").trim();if(t.replace(/[^A-Za-zÀ-ú]/g,"").length<4)return false;const w=t.split(/\s+/).filter(x=>x.length>1);if(!w.length)return false;
@@ -1184,10 +1204,10 @@ function detectStore(text,lines){
 function parseCupom(text){
   const lines=String(text).split(/\r?\n/).map(l=>l.replace(/\s+/g," ").trim()).filter(l=>l.length>1);
   const out={items:[],store:"",date:"",total:0};
-  const dm=text.match(/(\d{2})[\/.-](\d{2})[\/.-](20\d{2})/);if(dm)out.date=`${dm[3]}-${dm[2]}-${dm[1]}`;
+  out.date=findDate(text);
   out.store=detectStore(text,lines);
   const tm=text.match(/(?:VALOR\s*(?:A\s*)?PAGAR|VALOR\s*TOTAL|TOTAL)[^\d\n]{0,20}(\d{1,3}(?:\.\d{3})*,\d{2})/i);if(tm)out.total=num(tm[1]);
-  const reQ=/(\d+(?:[.,]\d{1,3})?)\s*(?:UN|UND|KG|PC|PCT|CX|LT|L|G|DZ|FD|BD|SC)?\s*[xX×*]\s*(\d+[.,]\d{2,3})/i;
+  const reQ=/(\d+(?:[.,]\d{1,3})?)\s*(UN|UND|UNID|KG|PC|PCT|CX|LT|L|G|DZ|FD|BD|SC)?\.?\s*[xX×*]\s*(\d{1,4}[.,]\d{2,3})(?:\s*[A-Z]?\s+(\d{1,4}(?:\.\d{3})*[.,]\d{2}))?/i;
   const reEnd=/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})\s*[A-Z]?\s*$/;
   const L=s=>(String(s).match(/[A-Za-zÀ-ú]/g)||[]).length;
   let pend=null;
@@ -1196,11 +1216,12 @@ function parseCupom(text){
     const q=l.match(reQ),e=l.match(reEnd);
     if(q){
       let src=l.slice(0,q.index).trim();if(L(src)<3&&pend)src=pend;pend=null;
-      const qty=num(q[1]),unit=num(q[2]);
-      if(L(src)>=3&&unit>0&&unit<10000)out.items.push({name:cleanName(src),qty:qty>0&&qty<1000?qty:1,price:unit});
+      let qty=num(q[1]),price=num(q[3]),tot=q[4]?num(q[4]):0;const kg=/^KG$/i.test(q[2]||"")||(!q[2]&&/\bKG\b/i.test(src)&&String(q[1]).match(/[.,]\d{3}$/));
+      if(!(qty>0&&qty<1000))qty=tot&&price?Math.round(tot/price*1000)/1000:1;
+      if(L(src)>=3&&price>0&&price<10000)out.items.push({name:cleanName(src),qty:kg?qty:Math.max(1,Math.round(qty)),unit:kg?"kg":"un",price,total:tot||Math.round(price*qty*100)/100});
     }else if(e&&L(l.slice(0,e.index))>=3){
       const price=num(e[1]);pend=null;
-      if(price>0&&price<10000)out.items.push({name:cleanName(l.slice(0,e.index)),qty:1,price});
+      if(price>0&&price<10000)out.items.push({name:cleanName(l.slice(0,e.index)),qty:1,unit:"un",price,total:price});
     }else if(L(l)>=3)pend=l;
   }
   return out;
@@ -1233,7 +1254,11 @@ function readCupom(file){
     }catch(e){close();reviewCupom({items:[],store:"",date:"",total:0},"",true)}
   });
 }
-function rowsHtml(items){return items.length?`<div class="rvh"><span></span><span>Produto</span><span>R$ unit.</span></div>`+items.map((it,i)=>`<div class="rv" data-i="${i}"><input type="checkbox" checked aria-label="Salvar este item"><input type="text" value="${esc(it.name)}" aria-label="Produto"><input type="number" inputmode="decimal" step="0.01" min="0" value="${it.price.toFixed(2)}" aria-label="Preço unitário"></div>`).join(""):""}
+function rowsHtml(items){return items.length?items.map((it,i)=>{const kg=it.unit==="kg";return `<div class="rv" data-i="${i}"><input type="checkbox" checked aria-label="Salvar este item"><input type="text" class="rv-nm" value="${esc(it.name)}" aria-label="Produto">
+  <div class="rv-q"><label>Qtd<input type="number" class="rv-qt" inputmode="decimal" step="any" min="0" value="${kg?it.qty:Math.round(it.qty||1)}"></label><label>Medida<select class="rv-un"><option value="un"${kg?"":" selected"}>un</option><option value="kg"${kg?" selected":""}>kg</option></select></label>
+  <label><span class="rv-pl">${kg?"R$ do kg":"R$ unit."}</span><input type="number" class="rv-pr" inputmode="decimal" step="0.01" min="0" value="${(+it.price||0).toFixed(2)}"></label><span class="rv-tot">${brl((+it.price||0)*(+it.qty||1))}</span></div></div>`}).join(""):""}
+function bindRows(el){el.querySelectorAll(".rv").forEach(d=>{const q=d.querySelector(".rv-qt"),u=d.querySelector(".rv-un"),p=d.querySelector(".rv-pr"),t=d.querySelector(".rv-tot"),pl=d.querySelector(".rv-pl");
+  const up=()=>{pl.textContent=u.value==="kg"?"R$ do kg":"R$ unit.";t.textContent=brl((parseFloat(p.value)||0)*(parseFloat(q.value)||0))};[q,u,p].forEach(x=>x.addEventListener("input",up));u.addEventListener("change",up)})}
 function reviewCupom(r,raw,failed){
   const today=todayISO(),tls=S.lists.filter(x=>(ui.cupomLists||[]).includes(x.id)&&!x.closed),tl=tls[0];
   const head=failed?`<div class="alert">Não consegui ler a foto aqui. Tente outra foto ou cole o texto do cupom abaixo.</div>`
@@ -1241,7 +1266,7 @@ function reviewCupom(r,raw,failed){
     :`<div class="alert">Não achei itens nessa foto. Tente uma mais reta e iluminada, ou cole o texto do cupom.</div>`;
   sheet(`<h2>Confira os preços</h2>${head}
     <div class="grid2"><label class="field">Mercado (confira)<input id="r-store" value="${esc(ui.cupomStore||r.store||"")}" placeholder="Nome do mercado, ex.: Prezunic"></label>
-    <label class="field">Data<input id="r-date" type="date" value="${r.date||tl?.date||today}"></label></div>
+    <label class="field">${r.date?"Data da nota":"Data (não achei na nota)"}<input id="r-date" type="date" value="${r.date||tl?.date||today}"></label></div>
     <div id="r-rows">${rowsHtml(r.items)}</div>
     <details ${r.items.length?"":"open"}><summary class="link" style="padding:8px 0;cursor:pointer">Colar texto do cupom</summary>
       <textarea id="r-raw" placeholder="Ex.: CAFE PILAO 500G 1 UN X 24,90 24,90">${esc(raw)}</textarea>
@@ -1251,16 +1276,16 @@ function reviewCupom(r,raw,failed){
     let items=r.items,total=r.total;
     el.querySelector("#r-parse").onclick=()=>{const p=parseCupom(el.querySelector("#r-raw").value);items=p.items;total=p.total;
       const st=el.querySelector("#r-store");if(!st.value&&p.store)st.value=p.store;if(p.date)el.querySelector("#r-date").value=p.date;
-      el.querySelector("#r-rows").innerHTML=rowsHtml(items);toast(items.length?`${items.length} itens encontrados.`:"Não achei itens nesse texto.")};
-    el.querySelector("#r-again").onclick=()=>{close();pickCupom()};
+      el.querySelector("#r-rows").innerHTML=rowsHtml(items);bindRows(el);toast(items.length?`${items.length} itens encontrados.`:"Não achei itens nesse texto.")};
+    bindRows(el);el.querySelector("#r-again").onclick=()=>{close();pickCupom()};
     el.querySelector("#r-save").onclick=()=>{
-      const rows=[...el.querySelectorAll(".rv")].map(d=>{const [cb,nm,pr]=d.querySelectorAll("input");return{ok:cb.checked,name:nm.value.trim(),price:parseFloat(pr.value),qty:items[+d.dataset.i]?.qty||1}}).filter(x=>x.ok&&x.name&&x.price>0);
+      const rows=[...el.querySelectorAll(".rv")].map(d=>({ok:d.querySelector("input[type=checkbox]").checked,name:d.querySelector(".rv-nm").value.trim(),price:parseFloat(d.querySelector(".rv-pr").value),qty:parseFloat(d.querySelector(".rv-qt").value)||1,unit:d.querySelector(".rv-un").value})).filter(x=>x.ok&&x.name&&x.price>0);
       if(!rows.length){toast("Nenhum item marcado com preço.");return}
       const store=el.querySelector("#r-store").value.trim(),date=el.querySelector("#r-date").value||today;
       if(S.sample){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false}
       let upd=0,mk=0;
-      rows.forEach(x=>{const sz=sizeOf(x.name);S.history.push({name:x.name,price:x.price,size:sz?.size??null,sizeUnit:sz?.unit,date,store,src:"cupom"});
-        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++;if(tls.includes(l)){if(x.qty)it.qty=it.unit==="g"&&x.qty<20?Math.round(x.qty*1000):x.qty;if(!it.done){it.done=true;mk++}}}}))});
+      rows.forEach(x=>{const sz=sizeOf(x.name);S.history.push({name:x.name,price:x.price,unit:x.unit,qty:x.qty,size:sz?.size??null,sizeUnit:sz?.unit,date,store,src:"cupom"});
+        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++;if(tls.includes(l)){if(x.qty){if(x.unit==="kg"&&it.unit!=="g")it.unit="kg";it.qty=it.unit==="g"&&x.qty<20?Math.round(x.qty*1000):x.qty}if(!it.done){it.done=true;mk++}}}}))});
       tls.forEach(x=>x.cupomSaved=true);
       const sum=rows.reduce((a,x)=>a+x.price*x.qty,0);
       const ptot=total>0?total:Math.round(sum*100)/100;
