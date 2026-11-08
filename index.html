@@ -156,6 +156,7 @@ h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.
 .field{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;color:var(--muted)}
 .field input,.field select{height:52px;border-radius:16px;border:2px solid var(--line);background:var(--card);padding:0 14px;font-size:17px;color:var(--fg);font-weight:500}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2>*{min-width:0}.grid2 input,.grid2 select{width:100%;min-width:0}
 .danger{color:var(--bad);font-weight:700;padding:12px}
 
 /* Insights */
@@ -403,7 +404,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.2.0";
+const VERSION = "3.3.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -585,11 +586,12 @@ let _ref=null;const refList=()=>_ref||(_ref=Object.entries(REF_RAW).map(([k,v])=
 function refPrice(name){const n=norm(name);const L=refList();const ex=L.find(r=>r[0]===n);if(ex)return ex[2];const m=L.find(r=>matches(name,r[1])||matches(r[1],name));return m?m[2]:null}
 const ufFactor=()=>{const u=S.uf||DEFAULT_UF;return UF_CESTA[u]?UF_CESTA[u]/UF_AVG:1};
 function estUnit(name){const lp=lastPrice(name);if(lp!=null)return lp;const r=refPrice(name);return r!=null?Math.round(r*ufFactor()*100)/100:null}
-const estItem=i=>{const u=i.price??estUnit(i.name);return u!=null?u*(+i.qty||1):0};
+const qf=i=>(+i.qty||1)/(i.unit==="g"?1000:1); // em gramas o preço é por kg
+const estItem=i=>{const u=i.price??estUnit(i.name);return u!=null?u*qf(i):0};
 const estList=items=>items.reduce((a,i)=>a+estItem(i),0);
 const ufSelect=(id,cls="")=>`<select id="${id}" class="${cls}" aria-label="Seu estado">${Object.keys(UF_NOME).sort().map(u=>`<option value="${u}" ${(S.uf||DEFAULT_UF)===u?"selected":""}>${u} · ${UF_NOME[u]}</option>`).join("")}</select>`;
 const listStage=l=>l.closed?"done":(l.stage||(l.items.some(i=>i.done)?"mercado":"montar"));
-const doneTotal=l=>l.items.filter(i=>i.done).reduce((a,i)=>a+(i.price||0)*i.qty,0);
+const doneTotal=l=>l.items.filter(i=>i.done).reduce((a,i)=>a+(i.price||0)*qf(i),0);
 function greet(){const h=new Date().getHours();return h<12?"Bom dia":h<18?"Boa tarde":"Boa noite"}
 function renderHome(){
   const open=S.lists.filter(l=>!l.closed),d=new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"});
@@ -613,7 +615,7 @@ function renderLists(){
 function renderList(){
   const l=S.lists.find(x=>x.id===ui.listId);if(!l){ui.screen="lists";return renderLists()}
   const s=listStats(l),est=estList(l.items),plan=getPlan(),hasCat=l.items.some(i=>i.cat),order=[...new Set([...plan.map(c=>c.name),...l.items.map(i=>i.cat||"Outros")])];
-  const row=i=>{const ql=fmtQty(i.qty,i.unit),real=i.done&&i.price,e=real?i.price*i.qty:estItem(i);return `<li class="ipill ${i.done?"done":""}"><button class="ck" data-toggle="${i.id}" aria-pressed="${!!i.done}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?ic("check",22):""}</button>
+  const row=i=>{const ql=fmtQty(i.qty,i.unit),real=i.done&&i.price,e=real?i.price*qf(i):estItem(i);return `<li class="ipill ${i.done?"done":""}"><button class="ck" data-toggle="${i.id}" aria-pressed="${!!i.done}" aria-label="${i.done?"Desmarcar":"Marcar"} ${esc(i.name)}">${i.done?ic("check",22):""}</button>
     <button class="nm" data-edit="${i.id}">${esc(i.name)}${ql?`<small>${esc(ql)}</small>`:""}</button>${e?`<button class="pr" data-edit="${i.id}">${real?"":"~"}${brl(e)}</button>`:""}</li>`};
   const groups=hasCat?order.map(c=>{const g=l.items.filter(i=>(i.cat||"Outros")===c).sort((a,b)=>a.done-b.done);if(!g.length)return "";
     return `<p class="csec">${(plan.find(x=>x.name===c)||{}).em||"🛍️"} ${esc(c)}</p><ul class="items">${g.map(row).join("")}</ul>`}).join("")
@@ -778,13 +780,14 @@ function editItem(l,it){
   sheet(`<h2>Editar item</h2>
     <label class="field">Nome<input id="e-name" value="${esc(it.name)}"></label>
     <label class="field">Categoria<select id="e-cat">${[...new Set([...getPlan().map(c=>c.name),it.cat||"Outros","Outros"])].map(c=>`<option ${c===(it.cat||"Outros")?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
-    <div class="grid2"><label class="field">Quantidade<input id="e-qty" type="number" inputmode="decimal" min="0" step="0.5" value="${it.qty}"></label>
-    <label class="field">Unidade<select id="e-unit">${[["un","unidade"],["kg","kg"],["pct","pacote"],["dz","dúzia"],["cx","caixa"],["L","litro"]].map(([v,t])=>`<option value="${v}" ${v===(it.unit||"un")?"selected":""}>${t}</option>`).join("")}</select></label></div>
-    <label class="field">Preço unitário (R$)<input id="e-price" type="number" inputmode="decimal" min="0" step="0.01" value="${it.price??""}" placeholder="0,00"></label>
+    <div class="grid2"><label class="field">Quantidade<input id="e-qty" type="number" inputmode="decimal" min="0" step="any" value="${it.qty}"></label>
+    <label class="field">Unidade<select id="e-unit">${[["un","unidade"],["kg","kg"],["g","gramas"],["pct","pacote"],["dz","dúzia"],["cx","caixa"],["L","litro"]].map(([v,t])=>`<option value="${v}" ${v===(it.unit||"un")?"selected":""}>${t}</option>`).join("")}</select></label></div>
+    <label class="field"><span id="e-plab">${it.unit==="g"?"Preço do kg (R$)":"Preço unitário (R$)"}</span><input id="e-price" type="number" inputmode="decimal" min="0" step="0.01" value="${it.price??""}" placeholder="0,00"></label>
     <details><summary class="link" style="padding:6px 0;cursor:pointer">Mais detalhes (embalagem)</summary><div class="grid2"><label class="field">Tamanho da embalagem<input id="e-size" type="number" inputmode="decimal" min="0" value="${it.size??""}" placeholder="ex.: 500"></label>
     <label class="field">Medida<select id="e-su">${["g","kg","ml","L","un"].map(u=>`<option ${u===(it.sizeUnit||"g")?"selected":""}>${u}</option>`).join("")}</select></label></div>
     <p class="hint" style="margin:6px 0 0">Com o tamanho dá para saber quando a embalagem diminui sem o preço baixar.</p></details>
     <button class="cta alt" id="e-save">Salvar</button><button class="danger" id="e-del">Remover item</button>`,(el,close)=>{
+    el.querySelector("#e-unit").onchange=ev=>{el.querySelector("#e-plab").textContent=ev.target.value==="g"?"Preço do kg (R$)":"Preço unitário (R$)";const q=el.querySelector("#e-qty");if(ev.target.value==="g"&&+q.value<20)q.value=Math.round((+q.value||1)*(it.unit==="kg"?1000:100))};
     el.querySelector("#e-save").onclick=()=>{const n=el.querySelector("#e-name").value.trim();if(!n){toast("Dá um nome pro item.");return}
       it.name=n;it.cat=el.querySelector("#e-cat").value;it.qty=parseFloat(el.querySelector("#e-qty").value)||1;it.unit=el.querySelector("#e-unit").value;
       const p=parseFloat(el.querySelector("#e-price").value);it.price=isNaN(p)?null:p;
@@ -812,7 +815,7 @@ function finishOnb(){
   save();applyTheme(S.theme);ui.screen="home";render();scrollTo(0,0);
 }
 function closeList(l){
-  const done=l.items.filter(i=>i.done),date=l.date||todayISO(),total=done.reduce((a,i)=>a+(i.price||0)*i.qty,0);
+  const done=l.items.filter(i=>i.done),date=l.date||todayISO(),total=done.reduce((a,i)=>a+(i.price||0)*qf(i),0);
   if(!l.cupomSaved){done.filter(i=>i.price).forEach(i=>S.history.push({name:i.name,price:i.price,size:i.size,sizeUnit:i.sizeUnit,date,list:l.name}));
     S.purchases.push({date,total,list:l.name,listId:l.id,store:l.store||""})}
   l.closed=true;l.date=date;l.total=l.cupomTotal||total;l.stage="done";
@@ -1228,7 +1231,7 @@ function reviewCupom(r,raw,failed){
       if(S.sample){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false}
       let upd=0,mk=0;
       rows.forEach(x=>{const sz=sizeOf(x.name);S.history.push({name:x.name,price:x.price,size:sz?.size??null,sizeUnit:sz?.unit,date,store,src:"cupom"});
-        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++;if(tls.includes(l)){if(x.qty)it.qty=x.qty;if(!it.done){it.done=true;mk++}}}}))});
+        S.lists.forEach(l=>l.items.forEach(it=>{if(matches(it.name,x.name)){it.price=x.price;if(sz){it.size=sz.size;it.sizeUnit=sz.unit}upd++;if(tls.includes(l)){if(x.qty)it.qty=it.unit==="g"&&x.qty<20?Math.round(x.qty*1000):x.qty;if(!it.done){it.done=true;mk++}}}}))});
       tls.forEach(x=>x.cupomSaved=true);
       const sum=rows.reduce((a,x)=>a+x.price*x.qty,0);
       const ptot=total>0?total:Math.round(sum*100)/100;
