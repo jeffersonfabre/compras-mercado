@@ -404,7 +404,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.5.0";
+const VERSION = "3.5.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -450,7 +450,14 @@ const DEFAULT_PLAN = [
   {em:"👶",name:"Bebê",pct:2,opt:"bebe",items:[["Fralda","pct",0,4],["Lenço umedecido","pct",0,2],["Pomada para assadura","un",0,1],["Sabonete infantil","un",0,1],["Leite ou fórmula infantil","un",0,0]]},
   {em:"🐾",name:"Pet",pct:2,opt:"pet",items:[["Ração","pct",0,1],["Areia sanitária","pct",0,1],["Petisco","pct",0,1],["Tapete higiênico","pct",0,0]]},
 ].map(c=>({...c,items:c.items.map(([name,unit,pp,min,need])=>({name,unit,pp,min,...(need?{need}:{})}))}));
-const OPT={bebe:{flag:"hasBebe",label:"👶 Bebê"},pet:{flag:"hasPet",label:"🐾 Pet"}};
+const OPT={bebe:{flag:"hasBebe",label:"👶 Bebê",name:"Bebê",re:/^\s*(beb[eê]s?|fraldas?)\s*$/i},pet:{flag:"hasPet",label:"🐾 Pet",name:"Pet",re:/^\s*(pets?|animais?|bichos?)\s*$/i}};
+function mergeOptCats(P){ // junta categorias repetidas de Pet/Bebê (ex.: "Pets" renomeada) numa só
+  const lo=x=>x.toLowerCase();
+  Object.entries(OPT).forEach(([k,o])=>{const dups=P.filter(c=>c.opt===k||(!c.opt&&o.re.test(c.name)));if(!dups.length)return;
+    const keep=dups.find(c=>!c.opt)||dups[0];keep.opt=k;
+    dups.filter(c=>c!==keep).forEach(c=>{c.items.forEach(it=>{if(!keep.items.some(x=>lo(x.name)===lo(it.name)))keep.items.push(it)});P.splice(P.indexOf(c),1)});
+    (S.lists||[]).forEach(l=>(l.items||[]).forEach(it=>{if(it.cat&&dups.some(c=>c.name===it.cat))it.cat=keep.name}))});
+  return P}
 const DEV_EMAIL = "domdevlabs@gmail.com";
 const DDL_FALLBACK = "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='26' fill='none' stroke='#F28C28' stroke-width='9' stroke-dasharray='7.5 6.1'/><circle cx='32' cy='32' r='22' fill='#F28C28'/><circle cx='32' cy='32' r='17' fill='#1E5FBF'/><text x='32' y='37' text-anchor='middle' font-family='monospace' font-weight='700' font-size='13' fill='#fff'>&lt;/&gt;</text></svg>`);
 const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
@@ -469,6 +476,11 @@ let S = load();
         if(S[OPT[k].flag])add.push(d);else{S.optStash=S.optStash||{};S.optStash[k]=d}});
       S.plan.splice(i,1,...add)}}
   (S.lists||[]).forEach(l=>(l.items||[]).forEach(it=>{if(/pet/i.test(it.cat||"")&&/beb/i.test(it.cat||""))it.cat=PETN.test(it.name)?"Pet":"Bebê"}));
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+})();
+(function migDupPet(){
+  if(S.migDup||!S.plan)return;S.migDup=true;mergeOptCats(S.plan);
+  Object.entries(OPT).forEach(([k,o])=>{if(S.plan.some(c=>c.opt===k))S[o.flag]=true});
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
 })();
 (function migFeira(){ // remove a lista "Feira" criada pela abertura das versões antigas
@@ -954,7 +966,7 @@ function bind(){
 function defaultPeople(){return S.people||(S.prefs.includes("Moro sozinho")?1:2+(S.prefs.includes("Tem criança")?1:0))}
 function getPlan(){return S.plan||JSON.parse(JSON.stringify(DEFAULT_PLAN)).filter(c=>!c.opt||S[OPT[c.opt].flag])}
 function setOptCat(key,on){ // liga/desliga a categoria Bebê ou Pet, guardando os itens se desligar
-  const P=getPlan(),i=P.findIndex(c=>c.opt===key);S[OPT[key].flag]=!!on;S.optStash=S.optStash||{};
+  const P=mergeOptCats(getPlan()),i=P.findIndex(c=>c.opt===key);S[OPT[key].flag]=!!on;S.optStash=S.optStash||{};
   if(on&&i<0)P.push(S.optStash[key]||JSON.parse(JSON.stringify(DEFAULT_PLAN.find(c=>c.opt===key))));
   if(!on&&i>=0){S.optStash[key]=P[i];P.splice(i,1)}
   S.plan=P;save()}
