@@ -324,6 +324,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 .lrow .go{width:56px;height:56px;border-radius:50%;background:var(--ondark);color:var(--lime);display:grid;place-items:center;flex:none}
 .lrow.white{background:#fff}
 .lrow.white .go{background:var(--lime);color:var(--ondark)}
+.mascot{width:100%;height:auto;display:block}
 .lwrap{position:relative}
 .ldel{position:absolute;top:26px;right:92px;width:44px;height:44px;border-radius:14px;background:rgba(0,0,0,.08);color:var(--ondark);display:grid;place-items:center}
 .ldel.armed{width:auto;padding:0 14px;background:#C62828;color:#fff;font-weight:700;font-size:14px}
@@ -404,7 +405,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.5.1";
+const VERSION = "3.6.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -458,6 +459,7 @@ function mergeOptCats(P){ // junta categorias repetidas de Pet/Bebê (ex.: "Pets
     dups.filter(c=>c!==keep).forEach(c=>{c.items.forEach(it=>{if(!keep.items.some(x=>lo(x.name)===lo(it.name)))keep.items.push(it)});P.splice(P.indexOf(c),1)});
     (S.lists||[]).forEach(l=>(l.items||[]).forEach(it=>{if(it.cat&&dups.some(c=>c.name===it.cat))it.cat=keep.name}))});
   return P}
+const MASCOT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" class="mascot" role="img" aria-label="Sacolito, o mascote"><g stroke="#0B0B0B" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><path d="M112 74 L138 14 Q144 4 152 10 Q158 16 152 26 L128 82 Z" fill="#E9B872"/><path d="M141 23 l8 4 M135 36 l8 4 M129 49 l8 4" fill="none" stroke="#B9813C" stroke-width="3.5"/><path d="M58 80 Q44 46 62 30 Q70 50 74 78 Z" fill="#3FBF5B"/><path d="M74 80 Q72 40 92 26 Q98 52 90 80 Z" fill="#2E9E47"/></g><path d="M68 86 Q68 52 100 52 Q132 52 132 86" fill="none" stroke="#0B0B0B" stroke-width="15" stroke-linecap="round"/><path d="M68 86 Q68 52 100 52 Q132 52 132 86" fill="none" stroke="#8FCB1F" stroke-width="7" stroke-linecap="round"/><path d="M38 80 H162 Q168 80 168 87 L176 196 Q177 210 162 210 H38 Q23 210 24 196 L32 87 Q32 80 38 80 Z" fill="#B6F23A" stroke="#0B0B0B" stroke-width="6" stroke-linejoin="round"/><path d="M33 86 H167 L168.5 104 H31.5 Z" fill="#8FCB1F"/><path d="M31.5 104 H168.5" stroke="#0B0B0B" stroke-width="5"/><ellipse cx="78" cy="140" rx="10" ry="13" fill="#0B0B0B"/><ellipse cx="122" cy="140" rx="10" ry="13" fill="#0B0B0B"/><circle cx="81.5" cy="135" r="3.6" fill="#fff"/><circle cx="125.5" cy="135" r="3.6" fill="#fff"/><ellipse cx="60" cy="163" rx="10" ry="6" fill="#FF8A8A" opacity=".8"/><ellipse cx="140" cy="163" rx="10" ry="6" fill="#FF8A8A" opacity=".8"/><path d="M86 164 Q100 180 114 164" fill="none" stroke="#0B0B0B" stroke-width="6" stroke-linecap="round"/></svg>`;
 const DEV_EMAIL = "domdevlabs@gmail.com";
 const DDL_FALLBACK = "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='26' fill='none' stroke='#F28C28' stroke-width='9' stroke-dasharray='7.5 6.1'/><circle cx='32' cy='32' r='22' fill='#F28C28'/><circle cx='32' cy='32' r='17' fill='#1E5FBF'/><text x='32' y='37' text-anchor='middle' font-family='monospace' font-weight='700' font-size='13' fill='#fff'>&lt;/&gt;</text></svg>`);
 const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
@@ -544,7 +546,9 @@ function render(){
 function renderOnb(){
   const o=ui.ob;
   return `<div class="screen onb1">
-    <h1 style="margin-top:24px">Compras Mercado</h1>
+    <div style="width:132px;margin:20px auto 0">${MASCOT}</div>
+    <h1 style="margin-top:8px;text-align:center">Compras Mercado</h1>
+    <p class="hint" style="text-align:center;margin:-6px 0 0">Oi! Eu sou o Sacolito e vou te ajudar nas compras.</p>
     <p class="sub">Monte a lista, marque no mercado e salve os preços do cupom. Para começar:</p>
     <label class="field">Seu nome<input id="ob-name" value="${esc(o.name)}" placeholder="Como te chamo?" maxlength="30" autocomplete="given-name"></label>
     <div class="field">Incluir na sua divisão do mês (toque se tiver)${optChips()}<span class="isub">Só aparece a categoria que você marcar. Dá para mudar depois em Ajustes.</span></div>
@@ -634,7 +638,7 @@ function renderLists(){
     <button class="lrow white" data-act="pick"><b>Nova lista</b><span class="go">${ic("plus",26)}</span></button>
     ${open.map(l=>{const s=listStats(l),e=estList(l.items);return `<div class="lwrap"><button class="lcard" data-open="${l.id}"><span class="top"><span>${s.tot} ${s.tot===1?"item":"itens"}${l.date?` · ${fmtD(l.date)}`:""}</span><span class="go">${ic("arrow")}</span></span>
       <h2>${esc(l.name)}</h2><span class="stats"><span>Faltam: <b>${s.tot-s.d}</b></span><span>No carrinho: <b>${s.d}</b></span>${e?`<span>Prévia: <b>${brl(e)}</b></span>`:""}</span></button><button class="ldel" data-ldel="${l.id}" aria-label="Apagar lista ${esc(l.name)}">${ic("trash",22)}</button></div>`}).join("")
-      ||`<p class="hint" style="text-align:center;margin:12px 0">Nenhuma lista aberta. Toque em Nova lista.</p>`}
+      ||`<div style="width:96px;margin:12px auto 0">${MASCOT}</div><p class="hint" style="text-align:center;margin:8px 0 12px">Nenhuma lista aberta. Toque em Nova lista.</p>`}
     ${tabs("lists")}</div>`;
 }
 
@@ -668,7 +672,7 @@ function renderShop(){
     ${open.map(l=>{const on=!!ui.shopSel[l.id],s=listStats(l),e=estList(l.items.filter(i=>!i.done));return `<button class="selcard ${on?"on":""}" data-shsel="${l.id}" aria-pressed="${on}"><span style="flex:1;min-width:0"><b>${esc(l.name)}</b><small>${s.tot-s.d} ${s.tot-s.d===1?"item":"itens"} para pegar</small></span>${e?`<span style="font-weight:700;white-space:nowrap">${brl(e)}</span>`:""}<span class="ck">${on?ic("check",24):""}</span></button>`}).join("")}
     <div class="wcard"><label class="field">Onde você vai comprar? (opcional)<input id="shop-store" placeholder="Ex.: mercado do bairro" value="${esc(ui.shopStore||"")}" maxlength="40"></label><p>Sem mercado por enquanto: a nota confirma.</p></div>
     <div class="botbar"><button class="cta dark" data-act="shop-cancel">Cancelar</button><button class="cta" data-act="shop-start" ${n?"":"disabled"}>${ic("cart",22)} Começar</button></div>`
-    :`<div class="emptycard"><h2>Nenhuma lista aberta</h2><p>Crie uma lista para começar a compra.</p><button class="cta" data-act="pick">${ic("plus",22)} Nova lista</button></div>`}
+    :`<div class="emptycard"><div style="width:96px">${MASCOT}</div><h2>Nenhuma lista aberta</h2><p>Crie uma lista para começar a compra.</p><button class="cta" data-act="pick">${ic("plus",22)} Nova lista</button></div>`}
     ${tabs("shop")}</div>`;
 }
 function renderShopping(){
