@@ -297,7 +297,7 @@ body{font-size:17px}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "2.2.0";
+const VERSION = "2.2.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -414,7 +414,7 @@ const UNITS={un:["unidade","unidades"],pct:["pacote","pacotes"],dz:["dúzia","d�
 function fmtNum(q){q=+q||1;const w=Math.floor(q),f=Math.round((q-w)*100)/100,fr={0.5:"½",0.25:"¼",0.75:"¾"}[f];return fr?`${w||""}${fr}`:String(q).replace(".",",")}
 function fmtQty(q,u){u=u||"un";q=+q||1;if(q===1&&u!=="kg")return "";const n=UNITS[u]||[u,u];return `${fmtNum(q)} ${q>1?n[1]:n[0]}`}
 const tipBox=(k,t)=>S.tips?.[k]?"":`<div class="tip"><span aria-hidden="true">💡</span><p>${t}</p><button class="link" data-act="tip-ok" data-tip="${k}">Entendi</button></div>`;
-/* Preço médio de referência (R$, média Brasil, estimativa nov/2026) — ajustado pelo estado com o custo da cesta básica DIEESE (jul/2026) */
+/* Preço médio de referência (R$, média Brasil). Itens da pesquisa Procon-SP (ago/2026) usam o preço real; os demais são estimativa — ajustado pelo estado com o custo da cesta básica DIEESE (jul/2026) */
 const REF_RAW={"Carne bovina":45,"Frango":18,"Carne de porco":28,"Peixe":40,"Ovos":12,"Linguiça":25,"Embutidos (salsicha, mortadela)":12,"Peito de frango":22,"Tofu":15,"Grão-de-bico":10,"Lentilha":10,"Proteína de soja":9,
   "Frutas da estação":9,"Banana":7,"Legumes (cenoura, abobrinha, chuchu)":7,"Batata":6,"Tomate":8,"Verduras (alface, couve)":4,"Alho":3,"Cebola":5,"Cheiro-verde":3,"Morango":9,"Laranja":5,"Maçã":10,"Limão":6,"Cenoura":5,"Temperos naturais":4,
   "Arroz 5kg":27,"Feijão 1kg":8,"Macarrão 500g":5,"Farinha de mandioca 500g":6,"Açúcar 1kg":5,"Sal 1kg":3,"Óleo de soja 900ml":8,"Azeite 500ml":38,"Café 500g":27,"Molho de tomate":3.5,"Enlatados (milho, ervilha, atum)":7,"Grãos (lentilha, grão-de-bico)":10,"Temperos secos":5,"Adoçante":8,"Tapioca":7,"Macarrão sem glúten":12,
@@ -429,6 +429,13 @@ const REF_RAW={"Carne bovina":45,"Frango":18,"Carne de porco":28,"Peixe":40,"Ovo
 const UF_CESTA={SP:915.01,MT:881.27,SC:860.73,RJ:855.37,RS:841.94,MS:809.08,PR:807.93,ES:795.34,GO:792.79,CE:769.88,MG:765.25,DF:747.10,TO:731.89,RR:730.74,PA:724.10,AP:713.29,PI:702.27,AM:697.80,AC:692.04,RO:684.83,PE:660.31,MA:656.69,BA:650.32,PB:644.04,RN:631.51,AL:618.60,SE:594.07};
 const UF_NOME={AC:"Acre",AL:"Alagoas",AP:"Amapá",AM:"Amazonas",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MT:"Mato Grosso",MS:"Mato Grosso do Sul",MG:"Minas Gerais",PA:"Pará",PB:"Paraíba",PR:"Paraná",PE:"Pernambuco",PI:"Piauí",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RS:"Rio Grande do Sul",RO:"Rondônia",RR:"Roraima",SC:"Santa Catarina",SP:"São Paulo",SE:"Sergipe",TO:"Tocantins"};
 const UF_AVG=Object.values(UF_CESTA).reduce((a,b)=>a+b,0)/27;
+// Procon-SP, pesquisa de preços ago/2026 (cidade de São Paulo). Convertido para média Brasil dividindo pelo peso de SP na cesta DIEESE.
+const PROCON_SP={"Arroz 5kg":20.59,"Feijão 1kg":8.63,"Açúcar 1kg":17.23/5,"Café 500g":24.86,"Farinha de mandioca 500g":7.29,"Batata":6.41,"Cebola":7.18,"Alho":30.94*0.05,
+  "Ovos":10.73,"Óleo de soja 900ml":7.55,"Leite 1L":5.72,"Pão de forma":6.79,"Pão francês":17.98,"Macarrão 500g":3.39,"Biscoito":3.72,"Carne bovina":(50.49+33.77)/2,
+  "Frango":11.33,"Embutidos (salsicha, mortadela)":13.85*0.5,"Linguiça":23.25,"Queijo muçarela 200g":55.74*0.2,"Presunto 200g":33.27*0.2,"Margarina":3.79,"Extrato de tomate":5.49,
+  "Sabão em pó ou líquido":11.38,"Água sanitária":3.72,"Amaciante":8.87,"Detergente":2.38,"Multiuso":4.11,"Papel higiênico 12 rolos":6.65/4*12,
+  "Pasta de dente":5.23,"Sabonete":2.02,"Desodorante":11.21,"Absorvente":5.87};
+for(const[k,v]of Object.entries(PROCON_SP))REF_RAW[k]=Math.round(v*UF_AVG/UF_CESTA.SP*100)/100;
 let _ref=null;const refList=()=>_ref||(_ref=Object.entries(REF_RAW).map(([k,v])=>[norm(k),k,v]).sort((a,b)=>b[0].length-a[0].length));
 function refPrice(name){const n=norm(name);const L=refList();const ex=L.find(r=>r[0]===n);if(ex)return ex[2];const m=L.find(r=>matches(name,r[1])||matches(r[1],name));return m?m[2]:null}
 const ufFactor=()=>S.uf&&UF_CESTA[S.uf]?UF_CESTA[S.uf]/UF_AVG:1;
@@ -471,7 +478,7 @@ function renderList(){
       <div class="meta">${meta}</div>${S.budgetOn&&l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}</div>`;
   const steps=stage==="done"?"":`<div class="steps3">${[["montar","Montar"],["mercado","No mercado"],["cupom","Cupom"]].map(([k,t],i)=>`<button class="st ${k===stage?"on":""} ${i<idx[stage]?"past":""}" data-stage="${k}" aria-current="${k===stage?"step":"false"}"><b>${i<idx[stage]?"✓":i+1}</b>${t}</button>`).join("")}</div>`;
   let body="";
-  if(stage==="montar") body=`${tipBox("montar","Confira a lista. Toque num item para mudar a quantidade, a categoria ou remover. O ~R$ é o preço médio estimado.")}
+  if(stage==="montar") body=`${tipBox("montar","Confira a lista. Toque num item para mudar a quantidade, a categoria ou remover. O ~R$ é o preço médio da sua região (Procon-SP ago/2026 ajustado pela cesta DIEESE do seu estado).")}
     ${S.uf?"":`<div class="ufrow"><span>📍 Seu estado, para preços da região</span>${ufSelect("uf-pick")}</div>`}
     <div class="adder"><input id="add-txt" class="padd" placeholder="+ adicionar item" aria-label="Adicionar item" enterkeyhint="done" autocomplete="off">
       <button class="round mic" data-act="mic" aria-label="Falar o item">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
