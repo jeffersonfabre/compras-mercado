@@ -297,7 +297,7 @@ body{font-size:17px}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "2.2.1";
+const VERSION = "2.3.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -436,13 +436,18 @@ const PROCON_SP={"Arroz 5kg":20.59,"Feijão 1kg":8.63,"Açúcar 1kg":17.23/5,"Ca
   "Sabão em pó ou líquido":11.38,"Água sanitária":3.72,"Amaciante":8.87,"Detergente":2.38,"Multiuso":4.11,"Papel higiênico 12 rolos":6.65/4*12,
   "Pasta de dente":5.23,"Sabonete":2.02,"Desodorante":11.21,"Absorvente":5.87};
 for(const[k,v]of Object.entries(PROCON_SP))REF_RAW[k]=Math.round(v*UF_AVG/UF_CESTA.SP*100)/100;
+// DIEESE, preço médio no Rio de Janeiro, set/2026 (banco de dados da cesta básica). Tem prioridade sobre o Procon-SP.
+const DIEESE_RJ={"Carne bovina":54.36,"Leite 1L":7.44,"Feijão 1kg":6.80,"Arroz 5kg":5.76*5,"Farinha de trigo 1kg":4.80,"Batata":8.09,"Tomate":12.66,
+  "Pão francês":21.51,"Café 500g":54.03/2,"Banana":10.60,"Açúcar 1kg":3.55,"Óleo de soja 900ml":7.80,"Manteiga":72.68*0.2};
+for(const[k,v]of Object.entries(DIEESE_RJ))REF_RAW[k]=Math.round(v*UF_AVG/UF_CESTA.RJ*100)/100;
+const DEFAULT_UF="RJ";
 let _ref=null;const refList=()=>_ref||(_ref=Object.entries(REF_RAW).map(([k,v])=>[norm(k),k,v]).sort((a,b)=>b[0].length-a[0].length));
 function refPrice(name){const n=norm(name);const L=refList();const ex=L.find(r=>r[0]===n);if(ex)return ex[2];const m=L.find(r=>matches(name,r[1])||matches(r[1],name));return m?m[2]:null}
-const ufFactor=()=>S.uf&&UF_CESTA[S.uf]?UF_CESTA[S.uf]/UF_AVG:1;
+const ufFactor=()=>{const u=S.uf||DEFAULT_UF;return UF_CESTA[u]?UF_CESTA[u]/UF_AVG:1};
 function estUnit(name){const lp=lastPrice(name);if(lp!=null)return lp;const r=refPrice(name);return r!=null?Math.round(r*ufFactor()*100)/100:null}
 const estItem=i=>{const u=i.price??estUnit(i.name);return u!=null?u*(+i.qty||1):0};
 const estList=items=>items.reduce((a,i)=>a+estItem(i),0);
-const ufSelect=(id,cls="")=>`<select id="${id}" class="${cls}" aria-label="Seu estado"><option value="">Escolha…</option>${Object.keys(UF_NOME).sort().map(u=>`<option value="${u}" ${S.uf===u?"selected":""}>${u} · ${UF_NOME[u]}</option>`).join("")}</select>`;
+const ufSelect=(id,cls="")=>`<select id="${id}" class="${cls}" aria-label="Seu estado">${Object.keys(UF_NOME).sort().map(u=>`<option value="${u}" ${(S.uf||DEFAULT_UF)===u?"selected":""}>${u} · ${UF_NOME[u]}</option>`).join("")}</select>`;
 const listStage=l=>l.closed?"done":(l.stage||(l.items.some(i=>i.done)?"mercado":"montar"));
 const doneTotal=l=>l.items.filter(i=>i.done).reduce((a,i)=>a+(i.price||0)*i.qty,0);
 function renderHome(){
@@ -478,8 +483,8 @@ function renderList(){
       <div class="meta">${meta}</div>${S.budgetOn&&l.month&&S.budget?`<div class="meta"><span>Orçamento do mês</span><span class="${s.v>S.budget?"over":""}">${brl(S.budget)}</span></div>`:""}</div>`;
   const steps=stage==="done"?"":`<div class="steps3">${[["montar","Montar"],["mercado","No mercado"],["cupom","Cupom"]].map(([k,t],i)=>`<button class="st ${k===stage?"on":""} ${i<idx[stage]?"past":""}" data-stage="${k}" aria-current="${k===stage?"step":"false"}"><b>${i<idx[stage]?"✓":i+1}</b>${t}</button>`).join("")}</div>`;
   let body="";
-  if(stage==="montar") body=`${tipBox("montar","Confira a lista. Toque num item para mudar a quantidade, a categoria ou remover. O ~R$ é o preço médio da sua região (Procon-SP ago/2026 ajustado pela cesta DIEESE do seu estado).")}
-    ${S.uf?"":`<div class="ufrow"><span>📍 Seu estado, para preços da região</span>${ufSelect("uf-pick")}</div>`}
+  if(stage==="montar") body=`${tipBox("montar","Confira a lista. Toque num item para mudar a quantidade, a categoria ou remover. O ~R$ é o preço médio da sua região (DIEESE Rio de Janeiro set/2026 e Procon-SP ago/2026; muda o estado em Ajustes).")}
+
     <div class="adder"><input id="add-txt" class="padd" placeholder="+ adicionar item" aria-label="Adicionar item" enterkeyhint="done" autocomplete="off">
       <button class="round mic" data-act="mic" aria-label="Falar o item">🎙️</button><button class="round" data-act="add" aria-label="Adicionar">+</button></div>
     ${l.items.length?`${grouped(l.items,i=>rowEdit(i,false))}<button class="cta alt" data-stage="mercado">Ir para o mercado →</button>`
@@ -691,7 +696,7 @@ function bind(){
   A.querySelectorAll("[data-sugg]").forEach(b=>b.onclick=()=>{l.items.unshift({id:uid(),name:b.dataset.sugg,qty:1,price:null,size:null,unit:"un",done:false});save();render()});
   A.querySelectorAll("[data-stage]").forEach(b=>b.onclick=()=>{l.stage=b.dataset.stage;save();render();scrollTo(0,0)});
   const sn=$("#st-name");if(sn)sn.onchange=()=>{S.name=sn.value.trim();save()};
-  const su=$("#st-uf");if(su)su.onchange=()=>{S.uf=su.value||null;save();toast(S.uf?`Preços médios de ${UF_NOME[S.uf]}.`:"Preços médios do Brasil.")};
+  const su=$("#st-uf");if(su)su.onchange=()=>{S.uf=su.value||null;save();toast(`Preços médios de ${UF_NOME[S.uf||DEFAULT_UF]}.`)};
   const ul=$("#uf-pick");if(ul&&ui.screen==="list")ul.onchange=()=>{S.uf=ul.value||null;save();render()};
   const ta=$("#add-txt");if(ta)ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addText()}};
   A.querySelectorAll("[data-set-theme]").forEach(b=>b.onclick=()=>{S.theme=b.dataset.setTheme;applyTheme(S.theme);save();render()});
@@ -771,8 +776,8 @@ function renderPick(){
   return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><h2 style="font-size:22px">Nova lista</h2><span style="width:44px"></span></div>
     ${tipBox("pick","Toque nos itens que vai comprar. Use a busca para achar rápido ou incluir um item novo.")}
     <div class="pkmeta">${pk.showMeta?`<div class="grid2" style="flex:1"><label class="field">Data<input id="pk-date" type="date" value="${pk.date}"></label><label class="field">Nome<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>`
-      :`<span>📅 ${pk.date===todayISO()?"Hoje":fmtD(pk.date)} · ${esc(pk.name||defName(pk.date))}${S.uf?` · 📍 ${S.uf}`:""}</span><button class="link" data-act="pk-meta">mudar</button>`}</div>
-    ${pk.showMeta||!S.uf?`<div class="ufrow"><span>📍 Seu estado, para os preços médios</span>${ufSelect("uf-pick")}</div>`:""}
+      :`<span>📅 ${pk.date===todayISO()?"Hoje":fmtD(pk.date)} · ${esc(pk.name||defName(pk.date))} · 📍 ${S.uf||DEFAULT_UF}</span><button class="link" data-act="pk-meta">mudar</button>`}</div>
+    ${pk.showMeta?`<div class="ufrow"><span>📍 Seu estado, para os preços médios</span>${ufSelect("uf-pick")}</div>`:""}
     <div class="pksearch"><input id="pk-q" class="padd" type="search" placeholder="🔎 Buscar ou incluir item" aria-label="Buscar ou incluir item" autocomplete="off"><button class="btn dark" id="pk-addq" hidden>+ Incluir</button></div>
     <div id="pk-list" class="group">
     ${top.length?`<div class="group pkg top"><p class="glabel">⭐ Mais comprados</p><div class="chips">${top.map(i=>chip(i.cat,i)).join("")}</div></div>`:""}
