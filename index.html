@@ -418,7 +418,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.12.2";
+const VERSION = "3.12.3";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1055,7 +1055,7 @@ function renderPick(){
       return `<div class="group pkg${open?" open":""}${ed?" editing":""}" data-cat="${esc(c)}">
       <div class="pkhrow"><button class="pkhead" data-pktoggle="${esc(c)}" aria-expanded="${!!open}"><span>${em} ${esc(c)}</span><span class="pkcount"><span class="pkn">${m?m+" ✓":""}</span><span class="chev">›</span></span></button>${inPlan?`<button class="iconbtn sm" data-pkedit="${esc(c)}" data-pkopen="${ed?"":"1"}" aria-label="Editar a categoria ${esc(c)}">${ed?"✓":"✏️"}</button>`:""}</div>
       <div class="pkbody">${ed?`<label class="field">Nome da categoria<input class="pname" id="pk-cname" value="${esc(c)}" maxlength="40"></label><div class="chips">${its.map(i=>`<span class="chip ed">${esc(i.name)}<button data-pkrm="${esc(i.name)}" aria-label="Excluir ${esc(i.name)} de ${esc(c)}">✕</button></span>`).join("")||`<span class="isub">Nenhum item.</span>`}</div>
-        <div class="adder"><input class="padd" id="pk-in" placeholder="Novo item (ex.: Morango)" aria-label="Novo item em ${esc(c)}"><button class="btn dark" data-pkin>Incluir</button></div>
+        <div class="adder"><input class="padd" id="pk-in" placeholder="Novo item (ex.: Morango)" aria-label="Novo item em ${esc(c)}" enterkeyhint="send" autocomplete="off"><button class="btn dark" data-pkin>Incluir</button></div>
         <div class="pkh"><button class="link on" data-pkedit="${esc(c)}">Pronto</button></div>`
       :`<div class="chips">${its.map(i=>chip(c,i)).join("")}${inPlan?`<button class="chip pkplus" data-pkedit="${esc(c)}" data-pkopen="1">+ Novo item</button>`:""}</div>
         ${inPlan?`<div class="pkh"><button class="link" data-pkall>Marcar todos</button><button class="link" data-pkedit="${esc(c)}">Editar</button></div>`:""}`}</div></div>`}).join("")}
@@ -1092,16 +1092,16 @@ function bindPick(A){
   // incluir/excluir itens de uma categoria da relação
   const keep=fn=>{const y=scrollY;fn();render();scrollTo(0,y)};
   const editPlan=f=>{const P=getPlan(),cat=P.find(x=>x.name===pk.edit);if(!cat)return;f(cat);S.plan=P;save()};
-  A.querySelectorAll("[data-pkedit]").forEach(b=>b.onclick=()=>{const c=b.dataset.pkedit;keep(()=>{pk.edit=b.dataset.pkopen?c:(pk.edit===c?null:c);if(pk.edit)pk.open[c]=true});if(pk.edit)$("#pk-in")?.focus({preventScroll:true})});
+  A.querySelectorAll("[data-pkedit]").forEach(b=>b.onclick=()=>{const c=b.dataset.pkedit,pv=$("#pk-in")?.value.trim();if(pv&&pk.edit===c&&!b.dataset.pkopen)addIn(true);keep(()=>{pk.edit=b.dataset.pkopen?c:(pk.edit===c?null:c);if(pk.edit)pk.open[c]=true});if(pk.edit)$("#pk-in")?.focus({preventScroll:true})});
   A.querySelectorAll("[data-pkrm]").forEach(b=>b.onclick=()=>{const n=b.dataset.pkrm,c=pk.edit;keep(()=>editPlan(cat=>{const i=cat.items.findIndex(x=>norm(x.name)===norm(n));
     if(i>=0)cat.items.splice(i,1);else(cat.hide=cat.hide||[]).push(n);delete pk.sel[c+"|"+n]}));toast(`${n} excluído de ${c}.`)});
-  const addIn=()=>{const inp=$("#pk-in");if(!inp)return;const v=inp.value.trim();if(!v){inp.focus();return}const c=pk.edit;let k=0;
+  function addIn(silentFocus){const inp=$("#pk-in");if(!inp)return;const v=inp.value.trim();if(!v){if(!silentFocus)inp.focus();return}const c=pk.edit;let k=0;
     keep(()=>editPlan(cat=>v.split(/[,;]/).map(t=>t.trim()).filter(Boolean).forEach(t=>{const nm=t.charAt(0).toUpperCase()+t.slice(1);
       if(!cat.items.some(x=>norm(x.name)===norm(nm)))cat.items.push({name:nm,unit:"un",pp:.5,min:1});
       if(cat.hide)cat.hide=cat.hide.filter(h=>norm(h)!==norm(nm));pk.sel[c+"|"+nm]="un";k++})));
-    $("#pk-in")?.focus({preventScroll:true});toast(k>1?`${k} itens incluídos em ${c} e marcados.`:`Incluído em ${c} e marcado.`)};
-  const pin=$("#pk-in");if(pin)pin.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addIn()}};
-  A.querySelectorAll("[data-pkin]").forEach(b=>b.onclick=addIn);
+    if(!silentFocus)$("#pk-in")?.focus({preventScroll:true});toast(k>1?`${k} itens incluídos em ${c} e marcados.`:`${v} incluído em ${c} e marcado.`)}
+  const pin=$("#pk-in");if(pin){pin.onkeydown=e=>{if(e.key==="Enter"||e.keyCode===13){e.preventDefault();addIn()}};pin.onblur=()=>setTimeout(()=>{const p2=$("#pk-in");if(p2&&p2===pin&&pin.value.trim()&&document.activeElement!==pin)addIn(true)},250)}
+  A.querySelectorAll("[data-pkin]").forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>addIn()});
   const cn=$("#pk-cname");if(cn)cn.onchange=()=>{const old=pk.edit,nw=cn.value.trim();if(!nw||nw===old)return;
     const P=getPlan();if(P.some(x=>x.name===nw)){toast("Já existe uma categoria com esse nome.");cn.value=old;return}
     const cat=P.find(x=>x.name===old);if(!cat)return;cat.name=nw;S.plan=P;
