@@ -416,7 +416,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.11.0";
+const VERSION = "3.11.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1173,11 +1173,11 @@ const SKIP=/TOTAL|PAGAR|SUBTOTAL|DESCONTO|ACRESC|TROCO|DINHEIRO|CART[AÃ]O|CR[E�
 const ABBR={qjo:"queijo",bisc:"biscoito",refrig:"refrigerante",choc:"chocolate",muss:"mussarela",hussarela:"mussarela",mussarela:"mussarela",iog:"iogurte",ferm:"fermentado",hexerica:"mexerica",req:"requeijão",lte:"leite",sab:"sabonete",deterg:"detergente",desinf:"desinfetante",amac:"amaciante",cx:"caixa",pct:"pacote",tp:"tipo",integ:"integral",cong:"congelado",frgo:"frango",fgo:"frango",bov:"bovino",cerv:"cerveja",manteig:"manteiga",marg:"margarina",refri:"refrigerante",lche:"lanche"};
 function cleanName(s){
   s=String(s).replace(/[—–]/g," ");
-  const m=s.match(/(?:^|\s)\d{1,3}\s+[A-Z]?\d{4,14}\s+(?=\S)/i); // nº do item + código do produto
+  const m=s.match(/(?:^|\s)(?:\d{1,3}\s+[A-Z]?\d{4,14}|0\d{2}\d{4,14})\s+(?=\S)/i); // nº do item + código do produto
   if(m)s=s.slice(m.index+m[0].length);else s=s.replace(/^\s*\d{1,3}\s+/,"").replace(/^\d{4,14}\s+/,"");
   s=s.replace(/^\s*L\.?\s+(FERM|COND|UHT|INTEG|DESN|PO\b)/i,"Leite $1").replace(/[|_~*"'#()\[\]{}+=<>]+/g," ").replace(/\s+/g," ").trim();
   let w=s.split(" ");while(w.length>1&&!/[A-Za-zÀ-ú]{2}/.test(w[0]))w.shift(); // lixo no começo
-  while(w.length>1&&(/^(KG|UN|UND|UNID|PC|PCT|CX|LT|FD|BD|SC)$/i.test(w[w.length-1])||/^[A-Z]?\d{1,3}[A-Z]?$/i.test(w[w.length-1])&&!/\d(kg|g|ml|l)$/i.test(w[w.length-1])))w.pop();
+  while(w.length>1&&(/^(KG|UN|UND|UNID|PC|PCT|CX|LT|FD|BD|SC|X)$/i.test(w[w.length-1])||/^\d+([.,]\d{1,3})?(k|kg|k6|kq|un|und)?$/i.test(w[w.length-1])&&!/^\d+(g|ml|l)$/i.test(w[w.length-1])||/^[A-Z]?\d{1,3}[A-Z]?$/i.test(w[w.length-1])&&!/\d(kg|g|ml|l)$/i.test(w[w.length-1])))w.pop();
   s=w.map(x=>ABBR[x.toLowerCase().replace(/\.$/,"")]||x).join(" ");
   return s.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/(\d)(kg|g|ml|lt|l)\b/gi,(m,a,b)=>a+({l:"L",lt:"L"}[b.toLowerCase()]||b.toLowerCase())).slice(0,48);
 }
@@ -1202,7 +1202,8 @@ function detectStore(text,lines){
   return "";
 }
 function parseCupom(text){
-  const lines=String(text).split(/\r?\n/).map(l=>l.replace(/\s+/g," ").trim()).filter(l=>l.length>1);
+  const fix=l=>l.replace(/\b[A-Z]?\s?\d{1,2}[.,]\d{2}\s?%/gi," ").replace(/(\d[.,]\d{3})\s*[kK]\s*[6gGqQ9]?(?![A-Za-z])/g,"$1 KG ").replace(/(\d)\s*u[nm]d?\b/gi,"$1 UN ");
+  const lines=String(text).split(/\r?\n/).map(l=>fix(l).replace(/\s+/g," ").trim()).filter(l=>l.length>1);
   const out={items:[],store:"",date:"",total:0};
   out.date=findDate(text);
   out.store=detectStore(text,lines);
@@ -1218,13 +1219,17 @@ function parseCupom(text){
       let src=l.slice(0,q.index).trim();if(L(src)<3&&pend)src=pend;pend=null;
       let qty=num(q[1]),price=num(q[3]),tot=q[4]?num(q[4]):0;const kg=/^KG$/i.test(q[2]||"")||(!q[2]&&/\bKG\b/i.test(src)&&String(q[1]).match(/[.,]\d{3}$/));
       if(!(qty>0&&qty<1000))qty=tot&&price?Math.round(tot/price*1000)/1000:1;
+      if(tot&&price&&Math.abs(qty*price-tot)>0.02){const q2=tot/price;if(kg)qty=Math.round(q2*1000)/1000;else if(Math.abs(q2-Math.round(q2))<0.02)qty=Math.round(q2)}
       if(L(src)>=3&&price>0&&price<10000)out.items.push({name:cleanName(src),qty:kg?qty:Math.max(1,Math.round(qty)),unit:kg?"kg":"un",price,total:tot||Math.round(price*qty*100)/100});
     }else if(e&&L(l.slice(0,e.index))>=3){
       const price=num(e[1]);pend=null;
       if(price>0&&price<10000)out.items.push({name:cleanName(l.slice(0,e.index)),qty:1,unit:"un",price,total:price});
     }else if(L(l)>=3)pend=l;
   }
-  return out;
+  // junta o mesmo produto repetido na nota (ex.: duas bandejas de mussarela)
+  const m=[];out.items.forEach(it=>{const o=m.find(x=>norm(x.name)===norm(it.name)&&x.unit===it.unit&&Math.abs(x.price-it.price)<0.005);
+    if(o){o.qty=Math.round((o.qty+it.qty)*1000)/1000;o.total=Math.round((o.total+it.total)*100)/100}else m.push({...it})});
+  out.items=m;return out;
 }
 function loadScript(src){return new Promise((res,rej)=>{if(window.Tesseract)return res();const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("script"));document.head.appendChild(s)})}
 async function prepImage(file){
