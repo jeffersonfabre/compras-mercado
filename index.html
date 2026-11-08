@@ -404,7 +404,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.4.0";
+const VERSION = "3.5.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -447,8 +447,10 @@ const DEFAULT_PLAN = [
   {em:"🧺",name:"Lavanderia",pct:3,items:[["Sabão em pó ou líquido","un",.5,1],["Amaciante","un",.5,1],["Água sanitária","un",.5,1],["Sabão em barra","un",.5,1],["Alvejante sem cloro","un",.2,1],["Tira-manchas","un",.1,1],["Prendedor de roupa","pct",0,0],["Passa-roupa","un",.1,0]]},
   {em:"🧴",name:"Higiene pessoal",pct:7,items:[["Papel higiênico 12 rolos","pct",.5,1],["Sabonete","un",2,2],["Shampoo","un",.3,1],["Pasta de dente","un",.5,1],["Desodorante","un",.5,1],["Absorvente","pct",.5,1],["Fio dental","un",.3,1]]},
   {em:"🧻",name:"Utilidades do lar",pct:3,items:[["Papel toalha","pct",.3,1],["Papel-alumínio","un",.2,1],["Filme PVC","un",.2,1],["Guardanapo","pct",.3,1],["Pilhas","pct",.1,0],["Lâmpadas","un",.1,0]]},
-  {em:"🐾",name:"Pets / bebê",pct:2,items:[["Ração","pct",0,1,"pet"],["Areia sanitária","pct",0,1,"pet"],["Fralda","pct",0,4,"bebe"],["Lenço umedecido","pct",0,2,"bebe"]]},
+  {em:"👶",name:"Bebê",pct:2,opt:"bebe",items:[["Fralda","pct",0,4],["Lenço umedecido","pct",0,2],["Pomada para assadura","un",0,1],["Sabonete infantil","un",0,1],["Leite ou fórmula infantil","un",0,0]]},
+  {em:"🐾",name:"Pet",pct:2,opt:"pet",items:[["Ração","pct",0,1],["Areia sanitária","pct",0,1],["Petisco","pct",0,1],["Tapete higiênico","pct",0,0]]},
 ].map(c=>({...c,items:c.items.map(([name,unit,pp,min,need])=>({name,unit,pp,min,...(need?{need}:{})}))}));
+const OPT={bebe:{flag:"hasBebe",label:"👶 Bebê"},pet:{flag:"hasPet",label:"🐾 Pet"}};
 const DEV_EMAIL = "domdevlabs@gmail.com";
 const DDL_FALLBACK = "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='26' fill='none' stroke='#F28C28' stroke-width='9' stroke-dasharray='7.5 6.1'/><circle cx='32' cy='32' r='22' fill='#F28C28'/><circle cx='32' cy='32' r='17' fill='#1E5FBF'/><text x='32' y='37' text-anchor='middle' font-family='monospace' font-weight='700' font-size='13' fill='#fff'>&lt;/&gt;</text></svg>`);
 const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
@@ -456,6 +458,19 @@ const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})(
 let deferredPrompt = null;
 
 let S = load();
+(function migBebePet(){
+  if(S.migBP)return;S.migBP=true;
+  S.hasPet=S.hasPet??(S.prefs||[]).includes("Tenho pet");S.hasBebe=S.hasBebe??(S.prefs||[]).includes("Tem bebê");
+  const PETN=/ra[cç][aã]o|areia|petisco|tapete/i;
+  if(S.plan){const i=S.plan.findIndex(c=>/pet/i.test(c.name)&&/beb/i.test(c.name));
+    if(i>=0){const old=S.plan[i],add=[];
+      ["bebe","pet"].forEach(k=>{const d=JSON.parse(JSON.stringify(DEFAULT_PLAN.find(c=>c.opt===k)));
+        old.items.filter(it=>(k==="pet")===(it.need==="pet"||PETN.test(it.name))).forEach(it=>{if(!d.items.some(x=>x.name.toLowerCase()===it.name.toLowerCase())){const {need,...rest}=it;d.items.push(rest)}});
+        if(S[OPT[k].flag])add.push(d);else{S.optStash=S.optStash||{};S.optStash[k]=d}});
+      S.plan.splice(i,1,...add)}}
+  (S.lists||[]).forEach(l=>(l.items||[]).forEach(it=>{if(/pet/i.test(it.cat||"")&&/beb/i.test(it.cat||""))it.cat=PETN.test(it.name)?"Pet":"Bebê"}));
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+})();
 (function migFeira(){ // remove a lista "Feira" criada pela abertura das versões antigas
   if(S.migFeira)return;S.migFeira=true;
   S.lists=(S.lists||[]).filter(l=>!(l.name==="Feira"&&!l.closed));
@@ -473,7 +488,7 @@ let S = load();
   (S.lists||[]).forEach(l=>(l.items||[]).forEach(i=>{if(LAV.includes(i.name)&&/limpeza/i.test(i.cat||""))i.cat="Lavanderia"}));
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
 })();
-let ui = {screen:S.onboarded?"home":"onb", step:0, listId:null, ob:{name:S.obDraft?.ob?.name||"",people:S.obDraft?.ob?.people||2}};
+let ui = {screen:S.onboarded?"home":"onb", step:0, listId:null, ob:{name:S.obDraft?.ob?.name||""}};
 
 function blank(){return {onboarded:false,theme:"system",prefs:[],tone:"animado",name:"",lists:[],history:[],purchases:[],sample:false}}
 function load(){try{const r=localStorage.getItem(KEY);if(r)return Object.assign(blank(),JSON.parse(r))}catch(e){}return blank()}
@@ -520,7 +535,7 @@ function renderOnb(){
     <h1 style="margin-top:24px">Compras Mercado</h1>
     <p class="sub">Monte a lista, marque no mercado e salve os preços do cupom. Para começar:</p>
     <label class="field">Seu nome<input id="ob-name" value="${esc(o.name)}" placeholder="Como te chamo?" maxlength="30" autocomplete="given-name"></label>
-    <div class="field">Quantas pessoas moram na casa?<div class="stepper"><button data-act="ob-minus" aria-label="Menos uma pessoa">−</button><output id="ob-n">${o.people}</output><button data-act="ob-plus" aria-label="Mais uma pessoa">+</button></div></div>
+    <div class="field">Incluir na sua divisão do mês (toque se tiver)${optChips()}<span class="isub">Só aparece a categoria que você marcar. Dá para mudar depois em Ajustes.</span></div>
     <button class="cta alt" data-act="finish">Começar</button>
     <button class="link" data-act="have" style="align-self:center">Já usei antes? Restaurar backup</button></div>`;
 }
@@ -755,9 +770,9 @@ function renderInsights(){
 function renderSettings(){
   const card=(t,b)=>`<div class="card"><p class="glabel">${t}</p>${b}</div>`,mut=t=>`<p style="margin:0;color:var(--muted);line-height:1.45">${t}</p>`;
   return `<div class="screen"><div class="topbar"><h2>Ajustes</h2></div>
-    ${card("Você",`<label class="field">Seu estado (preços médios da região)${ufSelect("st-uf","uf")}</label><label class="field">Seu nome<input id="st-name" value="${esc(S.name)}" placeholder="Como te chamo?" maxlength="30"></label>
-      <div class="field">Pessoas na casa<div class="stepper" style="justify-content:flex-start"><button data-act="st-minus" aria-label="Menos uma pessoa">−</button><output id="st-n">${S.people||defaultPeople()}</output><button data-act="st-plus" aria-label="Mais uma pessoa">+</button></div></div>`)}
+    ${card("Você",`<label class="field">Seu estado (preços médios da região)${ufSelect("st-uf","uf")}</label><label class="field">Seu nome<input id="st-name" value="${esc(S.name)}" placeholder="Como te chamo?" maxlength="30"></label>`)}
     ${card("Meus itens e categorias",`${mut(`${getPlan().length} categorias. São os itens que aparecem na Nova lista.`)}<button class="btn dark" data-act="plan-open" data-from="settings" style="align-self:flex-start">Editar itens e categorias</button>
+      <div class="field">Categorias de bebê e pet (só se tiver)${optChips()}</div>
       <div class="prow"><span>Controlar orçamento do mês</span><button class="chip ${S.budgetOn?"on":""}" data-act="budget-toggle" aria-pressed="${!!S.budgetOn}">${S.budgetOn?"Ligado":"Desligado"}</button></div>
       ${S.budgetOn?mut(`Defina o valor e a parte de cada categoria em Editar itens e categorias.${S.budget?` Orçamento: ${brl(S.budget)}.`:""}`):""}`)}
     ${card("Aparência",`<div class="chips">${[["system","Do aparelho"],["light","Claro"],["dark","Escuro"]].map(([k,l])=>`<button class="chip ${S.theme===k?"on":""}" data-set-theme="${k}">${l}</button>`).join("")}</div>`)}
@@ -810,7 +825,7 @@ function listForm(l){
 
 /* ---------- Ações ---------- */
 function finishOnb(){
-  const o=ui.ob;S.name=(($("#ob-name")?.value)??o.name??"").trim();S.people=o.people||2;S.onboarded=true;delete S.obDraft;if(!S.theme)S.theme="system";
+  const o=ui.ob;S.name=(($("#ob-name")?.value)??o.name??"").trim();S.onboarded=true;delete S.obDraft;if(!S.theme)S.theme="system";
   save();applyTheme(S.theme);ui.screen="home";render();scrollTo(0,0);
 }
 function closeList(l){
@@ -871,7 +886,6 @@ function bind(){
     else if(a==="mic")mic(b);
     else if(a==="checkout")checkout(l);
     else if(a==="sample")loadSample();
-    else if(a==="month")monthSheet();
     else if(a==="share-list")shareSheet(S.lists.find(x=>x.id===ui.listId));
     else if(a==="plan-open"){ui.planFrom=b.dataset.from||"settings";ui.screen="plan";render();scrollTo(0,0)}
     else if(a==="backup")backupSheet();
@@ -885,8 +899,6 @@ function bind(){
     else if(a==="install")doInstall();
     else if(a==="install-later"){S.installSnooze=Date.now();save();render()}
     else if(a==="clear-sample"){S.history=S.history.filter(h=>!h.sample);S.purchases=S.purchases.filter(p=>!p.sample);S.sample=false;save();render()}
-    else if(a==="ob-minus"||a==="ob-plus"){ui.ob.people=Math.max(1,Math.min(12,(ui.ob.people||2)+(a==="ob-plus"?1:-1)));$("#ob-n").textContent=ui.ob.people;ui.ob.name=$("#ob-name")?.value||ui.ob.name}
-    else if(a==="st-minus"||a==="st-plus"){S.people=Math.max(1,Math.min(12,(S.people||defaultPeople())+(a==="st-plus"?1:-1)));$("#st-n").textContent=S.people;save()}
     else if(a==="reopen"){l.closed=false;l.stage="mercado";save();render();scrollTo(0,0)}
     else if(a==="reuse")reuseList(l);
     else if(a==="pick-month")pickMonth();
@@ -917,6 +929,7 @@ function bind(){
   A.querySelectorAll("[data-tone]").forEach(b=>b.onclick=()=>{ui.ob.tone=b.dataset.tone;ui.ob.name=$("#ob-name").value;go(b,finishOnb)});
   const ni=$("#ob-name");if(ni)ni.oninput=()=>ui.ob.name=ni.value;
   A.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ui.screen=b.dataset.go;render();scrollTo(0,0)});
+  A.querySelectorAll("[data-optcat]").forEach(b=>b.onclick=()=>{const k=b.dataset.optcat;const nm=$("#ob-name");if(nm)ui.ob.name=nm.value;setOptCat(k,!S[OPT[k].flag]);render();toast(S[OPT[k].flag]?`Categoria ${k==="bebe"?"Bebê":"Pet"} incluída.`:`Categoria ${k==="bebe"?"Bebê":"Pet"} retirada.`)});
   A.querySelectorAll("[data-ldel]").forEach(b=>b.onclick=ev=>{ev.stopPropagation();if(!b.classList.contains("armed")){A.querySelectorAll(".ldel.armed").forEach(x=>{x.classList.remove("armed");x.innerHTML=ic("trash",22)});b.classList.add("armed");b.textContent="Apagar?";return}
     const l=S.lists.find(x=>x.id===b.dataset.ldel);S.lists=S.lists.filter(x=>x!==l);save();render();toast(`Lista "${l?.name||""}" apagada.`)});
   A.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ui.listId=b.dataset.open;ui.screen="list";render();scrollTo(0,0)});
@@ -939,7 +952,13 @@ function bind(){
 
 /* ---------- Lista padrão do mês ---------- */
 function defaultPeople(){return S.people||(S.prefs.includes("Moro sozinho")?1:2+(S.prefs.includes("Tem criança")?1:0))}
-function getPlan(){return S.plan||JSON.parse(JSON.stringify(DEFAULT_PLAN))}
+function getPlan(){return S.plan||JSON.parse(JSON.stringify(DEFAULT_PLAN)).filter(c=>!c.opt||S[OPT[c.opt].flag])}
+function setOptCat(key,on){ // liga/desliga a categoria Bebê ou Pet, guardando os itens se desligar
+  const P=getPlan(),i=P.findIndex(c=>c.opt===key);S[OPT[key].flag]=!!on;S.optStash=S.optStash||{};
+  if(on&&i<0)P.push(S.optStash[key]||JSON.parse(JSON.stringify(DEFAULT_PLAN.find(c=>c.opt===key))));
+  if(!on&&i>=0){S.optStash[key]=P[i];P.splice(i,1)}
+  S.plan=P;save()}
+const optChips=()=>`<div class="chips">${Object.entries(OPT).map(([k,o])=>`<button class="chip ${S[o.flag]?"on":""}" data-optcat="${k}" aria-pressed="${!!S[o.flag]}">${o.label}</button>`).join("")}</div>`;
 function monthItems(people,all){
   const P=S.prefs,vegan=P.includes("Sou vegano"),pet=P.includes("Tenho pet"),bebe=P.includes("Tem bebê");
   const plan=getPlan();if(!plan.length)return [];
@@ -966,25 +985,6 @@ function monthItems(people,all){
     qty:unit==="kg"?Math.max(min,Math.round(pp*people*2)/2):Math.max(min,Math.ceil(pp*people-1e-9)),
     price:lastPrice(name),size:null,done:false})).filter(i=>all||i.qty>0); // na Nova lista aparecem todos; na compra do mês só os com quantidade
 }
-function monthSheet(){
-  let n=defaultPeople();
-  sheet(`<h2>Lista padrão do mês</h2>
-    <p style="color:var(--muted)">Monto a compra de 30 dias pela sua divisão do mês: proteínas, hortifrúti, mercearia, laticínios, padaria, bebidas, congelados, limpeza, higiene, utilidades e pets/bebê.</p>
-    <p class="glabel" style="text-align:center">Quantas pessoas na casa?</p>
-    <div class="stepper"><button id="m-minus" aria-label="Menos uma pessoa">−</button><output id="m-n">${n}</output><button id="m-plus" aria-label="Mais uma pessoa">+</button></div>
-    <label class="field">Orçamento do mês (opcional)<input id="m-budget" type="number" inputmode="decimal" min="0" step="10" value="${S.budget||""}" placeholder="ex.: 1200"></label>
-    <button class="cta alt" id="m-go">Montar minha lista</button>
-    <button class="link" id="m-plan" style="align-self:center">Ver e editar a divisão por categoria</button>`,(el,close)=>{
-    const o=el.querySelector("#m-n");
-    el.querySelector("#m-minus").onclick=()=>{n=Math.max(1,n-1);o.textContent=n};
-    el.querySelector("#m-plus").onclick=()=>{n=Math.min(12,n+1);o.textContent=n};
-    el.querySelector("#m-plan").onclick=()=>{S.budget=parseFloat(el.querySelector("#m-budget").value)||0;save();close();ui.planFrom="settings";ui.screen="plan";render();scrollTo(0,0)};
-    el.querySelector("#m-go").onclick=()=>{
-      S.people=n;S.budget=parseFloat(el.querySelector("#m-budget").value)||0;const mes=new Date().toLocaleDateString("pt-BR",{month:"long"});
-      const l={id:uid(),name:`Compra do mês · ${mes}`,color:"mint",em:"📅",month:true,items:monthItems(n)};
-      S.lists.unshift(l);save();close();ui.listId=l.id;ui.screen="list";render();scrollTo(0,0);toast(`${l.items.length} itens para ${n} ${n>1?"pessoas":"pessoa"}.`)};
-  });
-}
 
 /* ---------- Nova lista com data: escolher itens da relação ---------- */
 function todayISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
@@ -1005,7 +1005,7 @@ function renderPick(){
   const chip=(c,i)=>{const k=c+"|"+i.name;return `<button class="chip pk ${pk.sel[k]?"on":""}" data-k="${esc(k)}" data-u="${esc(i.unit)}" aria-pressed="${!!pk.sel[k]}">${esc(i.name)}</button>`};
   const freq={};S.lists.forEach(l=>l.items.forEach(i=>{const k=norm(i.name);freq[k]=(freq[k]||0)+1}));
   const seen=new Set(),top=R.filter(i=>freq[norm(i.name)]&&!seen.has(norm(i.name))&&seen.add(norm(i.name))).sort((a,b)=>freq[norm(b.name)]-freq[norm(a.name)]).slice(0,12);
-  const cnt=c=>Object.keys(pk.sel).filter(k=>k.startsWith(c+"|")).length,np=S.people||defaultPeople();
+  const cnt=c=>Object.keys(pk.sel).filter(k=>k.startsWith(c+"|")).length;
   return `<div class="screen"><div class="topbar"><button class="iconbtn" data-go="home" aria-label="Voltar">‹</button><h2 style="font-size:22px">${pk.addTo?"Incluir itens":"Nova lista"}</h2><span style="width:44px"></span></div>
     ${tipBox("pick","Toque nos itens que vai comprar. Use a busca para achar rápido ou incluir um item novo.")}
     <div class="pkmeta">${pk.showMeta?`<div class="grid2" style="flex:1"><label class="field">Data<input id="pk-date" type="date" value="${pk.date}"></label><label class="field">Nome<input id="pk-name" value="${esc(pk.name)}" placeholder="${esc(defName(pk.date))}" maxlength="40"></label></div>`
@@ -1024,7 +1024,7 @@ function renderPick(){
       :`<div class="chips">${its.map(i=>chip(c,i)).join("")}${inPlan?`<button class="chip pkplus" data-pkedit="${esc(c)}" data-pkopen="1">+ Novo item</button>`:""}</div>
         ${inPlan?`<div class="pkh"><button class="link" data-pkall>Marcar todos</button><button class="link" data-pkedit="${esc(c)}">Editar</button></div>`:""}`}</div></div>`}).join("")}
     </div>
-    <button class="btn ${pk.month?"":"dark"}" data-act="pick-month">${pk.month?"✕ Desmarcar a compra do mês":`📅 Marcar a compra do mês (${np} ${np>1?"pessoas":"pessoa"})`}</button>
+    <button class="btn ${pk.month?"":"dark"}" data-act="pick-month">${pk.month?"✕ Desmarcar a compra do mês":"📅 Marcar a compra do mês"}</button>
     <button class="link" data-act="plan-open" data-from="pick" style="align-self:center">🗂️ Editar itens e categorias</button>
     <div class="pickbar"><button class="cta alt" data-act="pick-go" ${n?"":"disabled"}>${pickLabel(pk)}</button></div></div>`;
 }
@@ -1078,9 +1078,9 @@ function bindPick(A){
 function pickMonth(){
   const pk=ui.pick,y=scrollY;
   if(pk.month){pk.sel={};pk.qty={};pk.month=false;render();scrollTo(0,y);toast("Compra do mês desmarcada.");return}
-  const n=S.people||defaultPeople(),m=monthItems(n);
+  const m=monthItems(S.people||2);
   m.forEach(i=>{const k=i.cat+"|"+i.name;pk.sel[k]=i.unit||"un";pk.qty[k]=i.qty});pk.month=true;
-  render();scrollTo(0,y);toast(`${m.length} itens marcados para ${n} ${n>1?"pessoas":"pessoa"}. Tire o que não precisar.`);
+  render();scrollTo(0,y);toast(`${m.length} itens marcados. Tire o que não precisar.`);
 }
 function createPicked(){
   const pk=ui.pick;
