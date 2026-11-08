@@ -404,7 +404,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.3.0";
+const VERSION = "3.4.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -412,12 +412,6 @@ const brl = n => (n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 const COLORS = ["tomato","mint","sky","peach","sun","lilac"];
-const TEMPLATES = {
-  "Mercado do mês":{em:"🛒",color:"mint",items:["Arroz 5kg","Feijão","Café","Açúcar","Óleo","Papel higiênico","Sabão em pó","Leite"]},
-  "Churrasco":{em:"🔥",color:"lilac",items:["Picanha","Linguiça","Pão de alho","Carvão","Sal grosso","Gelo","Farofa pronta"]},
-  "Feira":{em:"🍅",color:"peach",items:["Tomate","Cebola","Banana","Alface","Batata","Ovos","Laranja"]},
-  "Farmácia":{em:"💊",color:"sun",items:["Pasta de dente","Fio dental","Protetor solar","Curativo"]},
-};
 const PREFS = {
   "Alimentação":["Sou vegano","Vegetariano","Sem lactose","Sem glúten","Low carb","Mais proteína"],
   "Saúde":["Tenho diabetes","Menos sal","Alergia a castanhas","Alergia a frutos do mar"],
@@ -462,6 +456,11 @@ const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})(
 let deferredPrompt = null;
 
 let S = load();
+(function migFeira(){ // remove a lista "Feira" criada pela abertura das versões antigas
+  if(S.migFeira)return;S.migFeira=true;
+  S.lists=(S.lists||[]).filter(l=>!(l.name==="Feira"&&!l.closed));
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+})();
 (function migLavanderia(){
   if(S.migLav)return;S.migLav=true;
   const LAV=["Sabão em pó ou líquido","Amaciante","Água sanitária","Sabão em barra","Alvejante sem cloro","Tira-manchas","Prendedor de roupa","Passa-roupa"];

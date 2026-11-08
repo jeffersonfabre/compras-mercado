@@ -1,6 +1,6 @@
 # Compras Mercado
 
-App web (PWA) de lista de compras Feito por **DomDevLabs** · domdevlabs@gmail.com · v3.3.0
+App web (PWA) de lista de compras Feito por **DomDevLabs** · domdevlabs@gmail.com · v3.4.0
 
 ## Como usar
 **Visual (v3):** fundo escuro com verde-limão e barra de 5 abas — **Home** (saudação, listas abertas, Nova lista), **Listas**, **Compra** (modo compra: escolha uma ou mais listas e o mercado), **Histórico** (compras concluídas, Gastos e compra sem nota) e **Nota** (foto da nota fiscal, galeria ou colar texto). Ajustes na engrenagem.
