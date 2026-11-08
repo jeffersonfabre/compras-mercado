@@ -325,6 +325,12 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 .lrow.white{background:#fff}
 .lrow.white .go{background:var(--lime);color:var(--ondark)}
 .mascot{width:100%;height:auto;display:block}
+.sacolito{display:flex;flex-direction:column;align-items:center;gap:6px;margin:18px 0 8px}
+.sacolito .sbag{width:min(150px,38vw);animation:bob 3s ease-in-out infinite}
+.sacolito .bubble{position:relative;background:var(--card);color:var(--fg);font-weight:700;font-size:16px;padding:10px 18px;border-radius:20px;border:2px solid var(--line)}
+.sacolito .bubble:after{content:"";position:absolute;left:50%;bottom:-9px;width:14px;height:14px;background:var(--card);border-right:2px solid var(--line);border-bottom:2px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.sacolito .sbag{animation:none}}
 .lwrap{position:relative}
 .ldel{position:absolute;top:26px;right:92px;width:44px;height:44px;border-radius:14px;background:rgba(0,0,0,.08);color:var(--ondark);display:grid;place-items:center}
 .ldel.armed{width:auto;padding:0 14px;background:#C62828;color:#fff;font-weight:700;font-size:14px}
@@ -405,7 +411,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.7.0";
+const VERSION = "3.8.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -630,6 +636,7 @@ function renderHome(){
       <div class="date">${d.charAt(0).toUpperCase()+d.slice(1)}</div><h1>${greet()}${S.name?`,<br>${esc(S.name)}.`:"."}</h1></div>
     ${open.map(l=>`<button class="lrow" data-open="${l.id}"><b>${esc(l.name)}</b><small>${l.items.length} ${l.items.length===1?"item":"itens"}</small><span class="go">${ic("arrow")}</span></button>`).join("")}
     <button class="lrow white" data-act="pick"><b>Nova lista</b><span class="go">${ic("plus",26)}</span></button>
+    <div class="sacolito"><span class="bubble">Bora às compras?</span><div class="sbag">${MASCOT}</div></div>
     ${tabs("home")}</div>`;
 }
 function renderLists(){
