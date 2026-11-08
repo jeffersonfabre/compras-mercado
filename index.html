@@ -411,7 +411,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.8.0";
+const VERSION = "3.9.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1289,7 +1289,7 @@ function listHtml(l){
   const id=hashStr(l.id+l.name+(l.date||"")),e=esc;
   const groups=groupItems(l.items).map(([c,its])=>`<h2>${e(c)}</h2>`+its.map((i,k)=>{const key=e(c)+"-"+k;return `<label><input type="checkbox" id="${key}"${i.done?" checked":""}><span>${e(i.name)}</span><small>${e(qtyTxt(i.qty,i.unit).replace(/^ \(|\)$/g,""))}</small></label>`}).join("")).join("");
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(htmlTitle(l))}</title><style>
-:root{--bg:#FFFBF7;--fg:#1A1512;--mut:#6F655E;--line:#E6DED6;--acc:#FF3D68;--card:#fff}
+:root{--bg:#FFFBF7;--fg:#1A1512;--mut:#6F655E;--line:#E6DED6;--acc:#FF8A1F;--card:#fff}
 @media(prefers-color-scheme:dark){:root{--bg:#0E0C0B;--fg:#F7F1EB;--mut:#A79C93;--line:#2F2925;--card:#1C1917}}
 body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
 main{max-width:520px;margin:0 auto;padding:20px 16px 40px}
@@ -1301,7 +1301,8 @@ input{width:26px;height:26px;accent-color:var(--acc);flex:none;margin:0}
 input:checked+span{text-decoration:line-through;color:var(--mut)}
 small{color:var(--mut);margin-left:auto;white-space:nowrap}
 footer{margin-top:24px;text-align:center;color:var(--mut);font-size:13px}
-</style></head><body><main><h1>🛒 ${e(l.name)}</h1><p class="sub">${l.date?e(fmtLong(l.date))+" · ":""}<span id="c"></span></p><div class="bar"><i id="b"></i></div>
+.top{display:flex;align-items:center;gap:12px}.top svg{width:64px;height:auto;flex:none}
+</style></head><body><main><div class="top">${MASCOT}<h1>${e(l.name)}</h1></div><p class="sub">${l.date?e(fmtLong(l.date))+" · ":""}<span id="c"></span></p><div class="bar"><i id="b"></i></div>
 ${groups}
 <footer>Feito com Compras Mercado · DomDevLabs</footer></main>
 <script>var K="cm-${id}",s={};try{s=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
@@ -1318,11 +1319,9 @@ async function shareHtml(l){
 }
 function shareSheet(l){
   if(!l)return;
-  const url=shareUrl(l),msg=`🛒 ${l.name}${l.date&&!l.name.includes(fmtD(l.date))?` (${fmtD(l.date)})`:""}: abra para ir marcando os itens\n${url}`;
-  sheet(`<h2>Enviar lista</h2><p style="color:var(--muted)">Quem receber abre a lista no celular e vai marcando os itens.</p>
-    <a class="share-opt main" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener"><span class="em">💬</span><span class="t"><b>Enviar pelo WhatsApp</b>Manda o link da lista para um contato.</span></a>
-    <button class="btn" id="sh-copy" style="align-self:center">Copiar link</button>`,(el,close)=>{
-    el.querySelector("#sh-copy").onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>toast("Link copiado."),()=>toast("Não deu para copiar aqui."))}catch(e){toast("Não deu para copiar aqui.")}};
+  sheet(`<h2>Enviar lista</h2><p style="color:var(--muted)">Envia o arquivo <b>${esc(htmlTitle(l))}</b>. Quem receber toca nele, a lista abre no celular e vai marcando os itens.</p>
+    <button class="share-opt main" id="sh-file"><span class="em">💬</span><span class="t"><b>Enviar pelo WhatsApp</b>Escolha o WhatsApp e o contato.</span></button>`,(el,close)=>{
+    el.querySelector("#sh-file").onclick=()=>{close();shareHtml(l)};
   });
 }
 
