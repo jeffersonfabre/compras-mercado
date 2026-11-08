@@ -417,7 +417,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.12.0";
+const VERSION = "3.12.1";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1171,15 +1171,20 @@ function sizeOf(name){const m=String(name).match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l
 /* ---------- Cupom fiscal ---------- */
 function num(s){return parseFloat(String(s).replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",","."))}
 const SKIP=/TOTAL|PAGAR|SUBTOTAL|DESCONTO|ACRESC|TROCO|DINHEIRO|CART[AÃ]O|CR[EÉ]DITO|D[EÉ]BITO|\bPIX\b|CNPJ|CPF|TRIBUT|ICMS|IMPOSTO|DESCRI[CÇ]|C[OÓ]DIGO|CHAVE|PROTOCOLO|CONSULT|S[EÉ]RIE|EMISS|VALOR PAGO|FORMA|ITENS|LEI 12|ENDERE|TELEFONE|\bIE\b/i;
-const ABBR={qjo:"queijo",bisc:"biscoito",refrig:"refrigerante",choc:"chocolate",muss:"mussarela",hussarela:"mussarela",mussarela:"mussarela",iog:"iogurte",ferm:"fermentado",hexerica:"mexerica",req:"requeijão",lte:"leite",sab:"sabonete",deterg:"detergente",desinf:"desinfetante",amac:"amaciante",cx:"caixa",pct:"pacote",tp:"tipo",integ:"integral",cong:"congelado",frgo:"frango",fgo:"frango",bov:"bovino",cerv:"cerveja",manteig:"manteiga",marg:"margarina",refri:"refrigerante",lche:"lanche",bco:"branco",sear:"Seara",nicroond:"micro-ondas",microond:"micro-ondas",socia:"social",socita:"social",lig:"líquido",lio:"líquido",liq:"líquido",uit:"vit.",dancne:"danone",chanyto:"chamyto",plast:"plástica",hussarela:"mussarela"};
+const ABBR={qjo:"queijo",bisc:"biscoito",refrig:"refrigerante",choc:"chocolate",muss:"mussarela",hussarela:"mussarela",mussarela:"mussarela",iog:"iogurte",ferm:"fermentado",hexerica:"mexerica",req:"requeijão",lte:"leite",sab:"sabonete",deterg:"detergente",desinf:"desinfetante",amac:"amaciante",cx:"caixa",pct:"pacote",tp:"tipo",integ:"integral",cong:"congelado",frgo:"frango",fgo:"frango",bov:"bovino",cerv:"cerveja",manteig:"manteiga",marg:"margarina",refri:"refrigerante",lche:"lanche",bco:"branco",sear:"Seara",nicroond:"micro-ondas",microond:"micro-ondas",socia:"social",socita:"social",lig:"líquido",lio:"líquido",liq:"líquido",uit:"vit.",dancne:"danone",chanyto:"chamyto",plast:"plástica",hussarela:"mussarela",pao:"pão",file:"filé",limao:"limão",acucar:"açúcar",feijao:"feijão",macarrao:"macarrão"};
+const KNOWN=["limão","mostarda","mussarela","mexerica","chamyto","fermentado","biscoito","social","bisnaguito","pipoca","arroz","feijão","açúcar","café","leite","queijo","presunto","manteiga","margarina","iogurte","requeijão","frango","peito","filé","linguiça","salsicha","banana","tomate","cebola","batata","cenoura","laranja","maçã","mamão","alface","detergente","sabonete","shampoo","amaciante","desinfetante","refrigerante","cerveja","danone","pepsi","coca","guaraná","macarrão","farinha","óleo","azeite","vinagre","maionese","ketchup","sardinha","atum","ovos","pão","bolacha","chocolate","achocolatado","nescau","toddy","sabão","papel","higiênico","creme","dental","escova","fralda","ração","areia","mortadela","peito","seara","sadia","perdigão","thaiti","tahiti","lanche","mini","fatia","fatiado","integral","branco","parboilizado","líquido","vitamina","morango","abacaxi","melancia","uva","pera","limpeza","esponja","alho","cheiro","verde","couve","brócolis","abobrinha","chuchu","pepino","pimentão"];
+const KN=KNOWN.map(w=>[w,w.normalize("NFD").replace(/[\u0300-\u036f]/g,"")]);
+function fixWord(w){const b=w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");if(b.length<5||/\d/.test(b))return w;
+  for(const [k,kb] of KN)if(kb===b)return k;let best=null,bd=9;for(const [k,kb] of KN){if(Math.abs(kb.length-b.length)>1)continue;const d=lev(kb,b);if(d<bd){bd=d;best=k}}
+  return bd<=1?best:w}
 function cleanName(s){
   s=String(s).replace(/[—–]/g," ");
   const m=s.match(/(?:^|\s)(?:\d{1,3}\s+[A-Z]?\d{4,14}|0\d{2}\d{4,14})\s+(?=\S)/i); // nº do item + código do produto
   if(m)s=s.slice(m.index+m[0].length);else s=s.replace(/^\s*\d{1,3}\s+/,"").replace(/^\d{4,14}\s+/,"");
-  s=s.replace(/^\s*L\.?\s+(FERM|COND|UHT|INTEG|DESN|PO\b)/i,"Leite $1").replace(/[|_~*"'#()\[\]{}+=<>]+/g," ").replace(/\s+/g," ").trim();
+  s=s.replace(/^\s*[L1I|l]\.?\s+(FERM|COND|UHT|INTEG|DESN|PO\b)/i,"Leite $1").replace(/[|_~*"'#()\[\]{}+=<>]+/g," ").replace(/\s+/g," ").trim();
   let w=s.split(" ");while(w.length>1&&!/[A-Za-zÀ-ú]{2}/.test(w[0]))w.shift(); // lixo no começo
   while(w.length>1&&(/^(KG|UN|UND|UNID|PC|PCT|CX|LT|FD|BD|SC|X)$/i.test(w[w.length-1])||/^\d+([.,]\d{1,3})?(k|kg|k6|kq|un|und)?$/i.test(w[w.length-1])&&!/^\d+(g|ml|l)$/i.test(w[w.length-1])||/^[A-Z]?\d{1,3}[A-Z]?$/i.test(w[w.length-1])&&!/\d(kg|g|ml|l)$/i.test(w[w.length-1])))w.pop();
-  s=w.map(x=>ABBR[x.toLowerCase().replace(/\.$/,"")]||x).join(" ");
+  s=w.map(x=>ABBR[x.toLowerCase().replace(/\.$/,"")]||fixWord(x)).join(" ");
   return s.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/(\d)(kg|g|ml|lt|l)\b/gi,(m,a,b)=>a+({l:"L",lt:"L"}[b.toLowerCase()]||b.toLowerCase())).slice(0,48);
 }
 function findDate(text){
@@ -1206,7 +1211,7 @@ function detectStore(text,lines){
 function lev(a,b){if(a===b)return 0;const m=a.length,n=b.length;if(!m||!n)return m||n;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
 const pn=t=>{t=String(t).replace(/\]/g,"1").replace(/\//g,"7").replace(/\)/g,"9").replace(/[^\d,.]/g,"");const m=t.match(/(\d{1,4}(?:\.\d{3})*)[.,](\d{1,2})$/);if(!m)return NaN;return parseFloat(m[1].replace(/\./g,"")+"."+(m[2].length===1?m[2]+"0":m[2]))};
 function parseNFCe(text){
-  const fixQ=l=>l
+  const fixQ=l=>l.replace(/(^|[\s(])[OoQD]\s?([.,])\s?(?=\d{2,3}\s*[KkUu])/g,"$10$2").replace(/(\d)[Oo](?=\d)/g,"$10")
     .replace(/(^|\s)[IJTÍÌ\[|l]?UN(?=[\sx×]|$)/g,"$11UN").replace(/(\d)0N(?=[\sx×]|$)/g,"$1UN")
     .replace(/(\d[.,]\d{2})([a-z])K/gi,(m,a,b)=>a+(b==="b"?"6":b==="o"||b==="O"?"0":"")+"K")
     .replace(/(\d)\s*K[G6]\s*[x×*4]?\s*(?=\d{1,3}[.,]\d{2})/gi,"$1KGx").replace(/K[G6]\b/gi,"KG");
@@ -1223,9 +1228,9 @@ function parseNFCe(text){
     let name=hm[3].trim();if((name.match(/[A-Za-zÀ-ú]/g)||[]).length<3)continue;
     const tail=l.slice(q.index+q[0].length);const tm=tail.match(/(\d{1,4}(?:\.\d{3})*[.,]\d[\d\]\/\)]?)\s*\S?$/);
     const vl=tm?pn(tm[1]):NaN;const kg=/KG/i.test(q[2]);let qty=parseFloat(q[1].replace(",","."));
-    let n=hm[1].replace(/[Oo]/g,"0").replace(/[IlJ]/g,"1");n=/^\d{3}$/.test(n)&&+n===seq+1||/^\d{3}$/.test(n)&&+n>seq&&+n<seq+4?n:String(seq+1).padStart(3,"0");seq=+n;
+    let n=hm[1].replace(/[Oo]/g,"0").replace(/[IlJ]/g,"1");n=/^\d{3}$/.test(n)&&(seq===0&&+n>0||+n===seq+1)||/^\d{3}$/.test(n)&&+n>seq&&+n<seq+4?n:String(seq+1).padStart(3,"0");seq=+n;
     let unitP=q[3]?pn(q[3]):NaN;
-    if(!(qty>0))qty=1;if(!kg)qty=Math.max(1,Math.round(qty));
+    if(!(qty>0))qty=1;if(kg&&qty>=20&&qty<1000)qty=qty/1000;if(!kg)qty=Math.max(1,Math.round(qty));
     if(isNaN(unitP))unitP=!isNaN(vl)?Math.round(vl/qty*100)/100:NaN;
     if(isNaN(unitP)||unitP<=0)continue;
     const total=!isNaN(vl)?vl:Math.round(unitP*qty*100)/100;
