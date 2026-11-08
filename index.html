@@ -297,7 +297,7 @@ body{font-size:17px}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "2.3.0";
+const VERSION = "2.4.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -342,7 +342,8 @@ const DEFAULT_PLAN = [
   {em:"🍞",name:"Padaria e matinais",pct:6,items:[["Pão de forma","un",1,1],["Biscoito","pct",1,1],["Torrada","pct",.3,1],["Cereal","un",.3,1],["Aveia","pct",.3,1],["Geleia","un",.2,1]]},
   {em:"🧃",name:"Bebidas",pct:6,items:[["Água mineral (fardo)","un",1,1],["Suco","un",2,2],["Refrigerante","un",1,1],["Cerveja (lata)","un",3,0],["Chá","cx",.3,1]]},
   {em:"🧊",name:"Congelados",pct:4,items:[["Pão de queijo","pct",.5,1],["Polpa de fruta","pct",1,1],["Pratos prontos","un",1,1],["Sorvete","un",.3,1]]},
-  {em:"🧽",name:"Limpeza",pct:7,items:[["Detergente","un",1,2],["Sabão em pó ou líquido","un",.5,1],["Amaciante","un",.5,1],["Água sanitária","un",.5,1],["Desinfetante","un",.5,1],["Multiuso","un",.3,1],["Esponja","un",1,2],["Saco de lixo","pct",.5,1],["Pano de limpeza","un",.5,1]]},
+  {em:"🧽",name:"Limpeza",pct:4,items:[["Detergente","un",1,2],["Desinfetante","un",.5,1],["Multiuso","un",.3,1],["Esponja","un",1,2],["Saco de lixo","pct",.5,1],["Pano de limpeza","un",.5,1]]},
+  {em:"🧺",name:"Lavanderia",pct:3,items:[["Sabão em pó ou líquido","un",.5,1],["Amaciante","un",.5,1],["Água sanitária","un",.5,1],["Sabão em barra","un",.5,1],["Alvejante sem cloro","un",.2,1],["Tira-manchas","un",.1,1],["Prendedor de roupa","pct",0,0],["Passa-roupa","un",.1,0]]},
   {em:"🧴",name:"Higiene pessoal",pct:7,items:[["Papel higiênico 12 rolos","pct",.5,1],["Sabonete","un",2,2],["Shampoo","un",.3,1],["Pasta de dente","un",.5,1],["Desodorante","un",.5,1],["Absorvente","pct",.5,1],["Fio dental","un",.3,1]]},
   {em:"🧻",name:"Utilidades do lar",pct:3,items:[["Papel toalha","pct",.3,1],["Papel-alumínio","un",.2,1],["Filme PVC","un",.2,1],["Guardanapo","pct",.3,1],["Pilhas","pct",.1,0],["Lâmpadas","un",.1,0]]},
   {em:"🐾",name:"Pets / bebê",pct:2,items:[["Ração","pct",0,1,"pet"],["Areia sanitária","pct",0,1,"pet"],["Fralda","pct",0,4,"bebe"],["Lenço umedecido","pct",0,2,"bebe"]]},
@@ -354,6 +355,18 @@ const EMBED = (()=>{try{return window.self!==window.top}catch(e){return true}})(
 let deferredPrompt = null;
 
 let S = load();
+(function migLavanderia(){
+  if(S.migLav)return;S.migLav=true;
+  const LAV=["Sabão em pó ou líquido","Amaciante","Água sanitária","Sabão em barra","Alvejante sem cloro","Tira-manchas","Prendedor de roupa","Passa-roupa"];
+  if(S.plan&&!S.plan.some(c=>c.name==="Lavanderia")){
+    const lim=S.plan.find(c=>/limpeza/i.test(c.name)),def=DEFAULT_PLAN.find(c=>c.name==="Lavanderia");
+    const lav={...JSON.parse(JSON.stringify(def)),pct:lim&&lim.pct>=3?3:0};
+    if(lim){lim.items=lim.items.filter(i=>!LAV.includes(i.name));if(lim.pct>=3)lim.pct-=3}
+    const at=lim?S.plan.indexOf(lim)+1:S.plan.length;S.plan.splice(at,0,lav);
+  }
+  (S.lists||[]).forEach(l=>(l.items||[]).forEach(i=>{if(LAV.includes(i.name)&&/limpeza/i.test(i.cat||""))i.cat="Lavanderia"}));
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+})();
 let ui = {screen:S.onboarded?"home":"onb", step:0, listId:null, ob:{name:S.obDraft?.ob?.name||"",people:S.obDraft?.ob?.people||2}};
 
 function blank(){return {onboarded:false,theme:"system",prefs:[],tone:"animado",name:"",lists:[],history:[],purchases:[],sample:false}}
@@ -422,7 +435,7 @@ const REF_RAW={"Carne bovina":45,"Frango":18,"Carne de porco":28,"Peixe":40,"Ovo
   "Pão de forma":9,"Pão sem glúten":18,"Biscoito":5,"Biscoito sem glúten":9,"Torrada":7,"Cereal":15,"Aveia":7,"Geleia":12,"Lanche escolar":8,"Suco de caixinha":3,
   "Água mineral (fardo)":15,"Suco":8,"Refrigerante":9,"Cerveja (lata)":4,"Chá":6,
   "Pão de queijo":18,"Polpa de fruta":8,"Pratos prontos":18,"Sorvete":22,
-  "Detergente":3,"Sabão em pó ou líquido":25,"Amaciante":15,"Água sanitária":5,"Desinfetante":7,"Multiuso":7,"Esponja":3,"Saco de lixo":9,"Pano de limpeza":5,
+  "Detergente":3,"Sabão em barra":3,"Alvejante sem cloro":12,"Tira-manchas":15,"Prendedor de roupa":8,"Passa-roupa":10,"Sabão em pó ou líquido":25,"Amaciante":15,"Água sanitária":5,"Desinfetante":7,"Multiuso":7,"Esponja":3,"Saco de lixo":9,"Pano de limpeza":5,
   "Papel higiênico 12 rolos":22,"Sabonete":3,"Shampoo":18,"Condicionador":18,"Pasta de dente":6,"Desodorante":14,"Absorvente":9,"Fio dental":7,
   "Papel toalha":8,"Papel-alumínio":8,"Filme PVC":8,"Guardanapo":5,"Pilhas":15,"Lâmpadas":12,
   "Ração":60,"Areia sanitária":25,"Petisco":12,"Fralda":60,"Fraldas":60,"Lenço umedecido":12,"Pomada para assadura":20};
@@ -433,7 +446,7 @@ const UF_AVG=Object.values(UF_CESTA).reduce((a,b)=>a+b,0)/27;
 const PROCON_SP={"Arroz 5kg":20.59,"Feijão 1kg":8.63,"Açúcar 1kg":17.23/5,"Café 500g":24.86,"Farinha de mandioca 500g":7.29,"Batata":6.41,"Cebola":7.18,"Alho":30.94*0.05,
   "Ovos":10.73,"Óleo de soja 900ml":7.55,"Leite 1L":5.72,"Pão de forma":6.79,"Pão francês":17.98,"Macarrão 500g":3.39,"Biscoito":3.72,"Carne bovina":(50.49+33.77)/2,
   "Frango":11.33,"Embutidos (salsicha, mortadela)":13.85*0.5,"Linguiça":23.25,"Queijo muçarela 200g":55.74*0.2,"Presunto 200g":33.27*0.2,"Margarina":3.79,"Extrato de tomate":5.49,
-  "Sabão em pó ou líquido":11.38,"Água sanitária":3.72,"Amaciante":8.87,"Detergente":2.38,"Multiuso":4.11,"Papel higiênico 12 rolos":6.65/4*12,
+  "Sabão em pó ou líquido":11.38,"Sabão em barra":3.12,"Água sanitária":3.72,"Amaciante":8.87,"Detergente":2.38,"Multiuso":4.11,"Papel higiênico 12 rolos":6.65/4*12,
   "Pasta de dente":5.23,"Sabonete":2.02,"Desodorante":11.21,"Absorvente":5.87};
 for(const[k,v]of Object.entries(PROCON_SP))REF_RAW[k]=Math.round(v*UF_AVG/UF_CESTA.SP*100)/100;
 // DIEESE, preço médio no Rio de Janeiro, set/2026 (banco de dados da cesta básica). Tem prioridade sobre o Procon-SP.
@@ -731,7 +744,7 @@ function monthItems(people,all){
   const hide=new Set(plan.flatMap(c=>c.hide||[]).map(norm));rows=rows.filter(r=>!hide.has(norm(r[1])));
   return rows.filter(r=>!blocked(r[1])).map(([cat,name,unit,pp,min])=>({id:uid(),name,cat,unit,
     qty:unit==="kg"?Math.max(min,Math.round(pp*people*2)/2):Math.max(min,Math.ceil(pp*people-1e-9)),
-    price:lastPrice(name),size:null,done:false})).filter(i=>i.qty>0);
+    price:lastPrice(name),size:null,done:false})).filter(i=>all||i.qty>0); // na Nova lista aparecem todos; na compra do mês só os com quantidade
 }
 function monthSheet(){
   let n=defaultPeople();
