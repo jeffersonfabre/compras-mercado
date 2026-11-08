@@ -323,6 +323,9 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 .lrow .go{width:56px;height:56px;border-radius:50%;background:var(--ondark);color:var(--lime);display:grid;place-items:center;flex:none}
 .lrow.white{background:#fff}
 .lrow.white .go{background:var(--lime);color:var(--ondark)}
+.lwrap{position:relative}
+.ldel{position:absolute;top:26px;right:92px;width:44px;height:44px;border-radius:14px;background:rgba(0,0,0,.08);color:var(--ondark);display:grid;place-items:center}
+.ldel.armed{width:auto;padding:0 14px;background:#C62828;color:#fff;font-weight:700;font-size:14px}
 .lcard{background:var(--lime);color:var(--ondark);border-radius:32px;padding:20px;display:flex;flex-direction:column;gap:14px;text-align:left;width:100%}
 .lcard .top{display:flex;justify-content:space-between;align-items:center;font-size:17px;width:100%}
 .lcard .go{width:56px;height:56px;border-radius:18px;background:var(--ondark);color:var(--lime);display:grid;place-items:center}
@@ -400,7 +403,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.1.0";
+const VERSION = "3.2.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -522,7 +525,7 @@ function renderOnb(){
     <button class="link" data-act="have" style="align-self:center">Já usei antes? Restaurar backup</button></div>`;
 }
 
-const IC={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+const IC={trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   lists:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
   cart:'<path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -601,8 +604,8 @@ function renderLists(){
   const open=S.lists.filter(l=>!l.closed);
   return `<div class="screen"><div class="ptitle"><h1>Listas</h1>${gearBtn()}</div>
     <button class="lrow white" data-act="pick"><b>Nova lista</b><span class="go">${ic("plus",26)}</span></button>
-    ${open.map(l=>{const s=listStats(l),e=estList(l.items);return `<button class="lcard" data-open="${l.id}"><span class="top"><span>${s.tot} ${s.tot===1?"item":"itens"}${l.date?` · ${fmtD(l.date)}`:""}</span><span class="go">${ic("arrow")}</span></span>
-      <h2>${esc(l.name)}</h2><span class="stats"><span>Faltam: <b>${s.tot-s.d}</b></span><span>No carrinho: <b>${s.d}</b></span>${e?`<span>Prévia: <b>${brl(e)}</b></span>`:""}</span></button>`}).join("")
+    ${open.map(l=>{const s=listStats(l),e=estList(l.items);return `<div class="lwrap"><button class="lcard" data-open="${l.id}"><span class="top"><span>${s.tot} ${s.tot===1?"item":"itens"}${l.date?` · ${fmtD(l.date)}`:""}</span><span class="go">${ic("arrow")}</span></span>
+      <h2>${esc(l.name)}</h2><span class="stats"><span>Faltam: <b>${s.tot-s.d}</b></span><span>No carrinho: <b>${s.d}</b></span>${e?`<span>Prévia: <b>${brl(e)}</b></span>`:""}</span></button><button class="ldel" data-ldel="${l.id}" aria-label="Apagar lista ${esc(l.name)}">${ic("trash",22)}</button></div>`}).join("")
       ||`<p class="hint" style="text-align:center;margin:12px 0">Nenhuma lista aberta. Toque em Nova lista.</p>`}
     ${tabs("lists")}</div>`;
 }
@@ -912,6 +915,8 @@ function bind(){
   A.querySelectorAll("[data-tone]").forEach(b=>b.onclick=()=>{ui.ob.tone=b.dataset.tone;ui.ob.name=$("#ob-name").value;go(b,finishOnb)});
   const ni=$("#ob-name");if(ni)ni.oninput=()=>ui.ob.name=ni.value;
   A.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ui.screen=b.dataset.go;render();scrollTo(0,0)});
+  A.querySelectorAll("[data-ldel]").forEach(b=>b.onclick=ev=>{ev.stopPropagation();if(!b.classList.contains("armed")){A.querySelectorAll(".ldel.armed").forEach(x=>{x.classList.remove("armed");x.innerHTML=ic("trash",22)});b.classList.add("armed");b.textContent="Apagar?";return}
+    const l=S.lists.find(x=>x.id===b.dataset.ldel);S.lists=S.lists.filter(x=>x!==l);save();render();toast(`Lista "${l?.name||""}" apagada.`)});
   A.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{ui.listId=b.dataset.open;ui.screen="list";render();scrollTo(0,0)});
   const l=S.lists.find(x=>x.id===ui.listId);
   A.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{const it=l.items.find(i=>i.id===b.dataset.toggle);it.done=!it.done;save();const y=scrollY;render();scrollTo(0,y)});
