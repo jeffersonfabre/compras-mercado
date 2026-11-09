@@ -418,7 +418,7 @@ h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em}
 <input type="file" id="cupom-file" accept="image/*" hidden>
 
 <script>
-const VERSION = "3.13.0";
+const VERSION = "3.14.0";
 const KEY = "compras-mercado.v1";
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1430,12 +1430,26 @@ window.addEventListener("hashchange",()=>{const d=readShared();if(d){ui.shared=d
 
 /* ---------- Backup ---------- */
 function backupCode(){const d={...S};delete d.obDraft;return "CM1:"+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
-function readBackup(txt){let t=String(txt||"").trim();if(!t)return null;try{if(t.startsWith("CM1:"))t=decodeURIComponent(escape(atob(t.slice(4).replace(/\s/g,""))));const d=JSON.parse(t);return d&&Array.isArray(d.lists)?d:null}catch(e){return null}}
+function readBackup(txt){ // aceita o código com texto antes/depois, quebras de linha, espaços invisíveis ou arquivo .json
+  let t=String(txt||"").replace(/[\u200B-\u200D\u2060\uFEFF]/g,"").trim();if(!t)return null;
+  const ok=d=>d&&typeof d==="object"&&Array.isArray(d.lists)?d:null;
+  const j=t.indexOf("{");if(j>=0&&!/CM1:/i.test(t)){try{return ok(JSON.parse(t.slice(j,t.lastIndexOf("}")+1)))}catch(e){}}
+  const i=t.search(/CM1:/i);if(i<0)return null;let b=t.slice(i+4);const k=b.search(/CM1:/i);if(k>=0)b=b.slice(0,k);
+  b=b.replace(/[^A-Za-z0-9+/=_-]/g,"").replace(/-/g,"+").replace(/_/g,"/").replace(/=+$/,"");while(b.length%4)b+="=";
+  try{return ok(JSON.parse(decodeURIComponent(escape(atob(b)))))}catch(e){}
+  try{return ok(JSON.parse(atob(b)))}catch(e){return null}}
+function backupFileName(){return `Compras Mercado - backup ${todayISO().split("-").reverse().join("-")}.json`}
+async function saveBackupFile(){const d={...S};delete d.obDraft;const blob=new Blob([JSON.stringify(d)],{type:"application/json"}),name=backupFileName();
+  try{const f=new File([blob],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return true}}catch(e){if(e&&e.name==="AbortError")return false}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return true}
 function backupSheet(){
   S.lastBackup=Date.now();save();const code=backupCode();
   sheet(`<h2>Backup</h2><p style="color:var(--muted)">Copie o código abaixo e guarde onde quiser: WhatsApp para você mesmo, Notas ou e-mail. Para recuperar, use <b>Restaurar backup</b> e cole o código.</p>
     <textarea id="bk-code" readonly>${esc(code)}</textarea>
-    <button class="cta alt" id="bk-copy">Copiar código</button>`,(el,close)=>{
+    <button class="cta alt" id="bk-copy">Copiar código</button>
+    <button class="btn" id="bk-file" style="align-self:center">💾 Salvar como arquivo</button>
+    <p class="hint" style="margin:0">Arquivo é o jeito mais seguro para passar do navegador para o app instalado: salve em <b>Arquivos</b> e depois use Restaurar → Abrir arquivo.</p>`,(el,close)=>{
+    el.querySelector("#bk-file").onclick=async()=>{if(await saveBackupFile())toast("Arquivo de backup pronto.")};
     const ta=el.querySelector("#bk-code");
     el.querySelector("#bk-copy").onclick=()=>{const sel=()=>{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length)};
       try{navigator.clipboard.writeText(code).then(()=>{toast("Backup copiado.");close()},()=>{sel();toast("Código selecionado. É só copiar.")})}catch(e){sel();toast("Código selecionado. É só copiar.")}};
@@ -1444,13 +1458,17 @@ function backupSheet(){
 function restoreSheet(fromWelcome){
   sheet(`<h2>${fromWelcome?"Já usou antes?":"Restaurar backup"}</h2>
     <p style="color:var(--muted)">Cole o código de backup que você copiou em Ajustes. Suas listas, preços e preferências voltam como estavam.</p>
-    <textarea id="rs-code" placeholder="Cole aqui o código (começa com CM1:)"></textarea>
+    <textarea id="rs-code" placeholder="Cole aqui o código (começa com CM1:)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
     <button class="cta alt" id="rs-go">Restaurar</button>
+    <label class="btn" style="align-self:center;cursor:pointer">📂 Abrir arquivo de backup<input type="file" id="rs-file" accept=".json,.txt,application/json,text/plain" hidden></label>
     ${fromWelcome?`<button class="btn" id="rs-skip" style="align-self:center">Não tenho backup, começar agora</button>`:""}`,(el,close)=>{
-    el.querySelector("#rs-go").onclick=()=>{const d=readBackup(el.querySelector("#rs-code").value);
-      if(!d){toast("Código inválido. Confira se copiou ele inteiro.");return}
+    const apply=d=>{
       S=Object.assign(blank(),d,{onboarded:true});delete S.obDraft;save();applyTheme(S.theme);close();ui.screen="home";render();scrollTo(0,0);
       toast(`Backup restaurado: ${S.lists.length} ${S.lists.length===1?"lista":"listas"}.`)};
+    el.querySelector("#rs-go").onclick=()=>{const v=el.querySelector("#rs-code").value,d=readBackup(v);
+      if(!d){toast(!v.trim()?"Cole o código primeiro.":/CM1:/i.test(v)?"O código veio cortado. Copie de novo inteiro ou use Salvar como arquivo.":"Isso não parece um backup. Ele começa com CM1:");return}apply(d)};
+    el.querySelector("#rs-file").onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const d=readBackup(await f.text());
+      if(!d){toast("Esse arquivo não é um backup do Compras Mercado.");return}apply(d)};
     const sk=el.querySelector("#rs-skip");if(sk)sk.onclick=()=>{close();finishOnb()};
   });
 }
